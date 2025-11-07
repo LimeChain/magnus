@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 use clap::Parser;
 use futures_util::StreamExt as _;
+use metrics::{describe_counter, describe_histogram};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use secrecy::ExposeSecret;
 use solana_sdk::pubkey::Pubkey;
@@ -130,6 +131,7 @@ async fn run(cfg: Cfg) {
     let mut terminate = signal(SignalKind::terminate()).expect("Unable to initialise termination signal handler");
 
     let prometheus = PrometheusBuilder::new().install_recorder().expect("failed to install recorder");
+    initialise_prometheus_metrics();
 
     /*
      * |1| Bootstrap proper state, either natively or via some external provider (check out `https://cache.jup.ag/markets?v=4`)
@@ -177,4 +179,12 @@ async fn run(cfg: Cfg) {
         _ = interrupt.recv() => {}
         _ = terminate.recv() => {}
     }
+}
+
+pub fn initialise_prometheus_metrics() {
+    describe_counter!("API HITS", "The amount of hits experienced by the API since the server started");
+    describe_counter!("API ERRORS", "The amount of errors experienced by the API since the server started");
+
+    describe_counter!("METRICS HITS", "The amount of hits experienced by the /metrics since the (metrics) server started");
+    // ..
 }

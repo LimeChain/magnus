@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use actix_web::{App, HttpResponse, HttpServer, web};
+use metrics::counter;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_sdk::pubkey::Pubkey;
@@ -11,57 +12,6 @@ use utoipa_swagger_ui::SwaggerUi;
 
 const JUPITER_BASE_URL: &str = "https://lite-api.jup.ag";
 const DFLOW_BASE_URL: &str = "https://quote-api.dflow.net";
-
-#[derive(Debug, Clone)]
-pub struct ApiServerCfg {
-    pub host: String,
-    pub workers: u16,
-}
-
-pub struct ApiServer {
-    inner: actix_web::dev::Server,
-}
-
-#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum Aggregators {
-    #[default]
-    Jupiter,
-    DFlow,
-}
-
-#[derive(Copy, Clone, Debug, Deserialize, ToSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum SrcKind {
-    // get the best pricing from any aggregator
-    Aggregators,
-
-    // poke only one of the aggregators for a price
-    Jupiter,
-    DFlow,
-
-    // get the best pricing from any of the integrated AMMs
-    // perhaps we can get even more granular here and segment into (prop|public) AMMs
-    #[serde(rename = "amms")]
-    AMMs,
-}
-
-impl Default for SrcKind {
-    fn default() -> Self {
-        SrcKind::Aggregators
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct QuoteParam {
-    input_mint: String,
-    output_mint: String,
-    amount: u64,
-
-    #[serde(default)]
-    src_kind: SrcKind,
-}
 
 // -- jupiter
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -121,6 +71,36 @@ pub struct DFlowQuoteResponse {
 }
 // --
 
+#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum Aggregator {
+    #[default]
+    Jupiter,
+    DFlow,
+}
+
+#[derive(Copy, Clone, Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum SrcKind {
+    // get the best pricing from any aggregator
+    Aggregators,
+
+    // poke only one of the aggregators for a price
+    Jupiter,
+    DFlow,
+
+    // get the best pricing from any of the integrated AMMs
+    // perhaps we can get even more granular here and segment into (prop|public) AMMs
+    #[serde(rename = "amms")]
+    AMMs,
+}
+
+impl Default for SrcKind {
+    fn default() -> Self {
+        SrcKind::Aggregators
+    }
+}
+
 // -- internal
 #[derive(Clone, Debug, Serialize, ToSchema)]
 pub struct QuotePlanItem {
@@ -132,9 +112,22 @@ pub struct QuotePlanItem {
     pub out_amount: u64,
 }
 
+#[derive(Clone, Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct QuoteOrSimParam {
+    input_mint: String,
+    output_mint: String,
+    amount: u64,
+
+    #[serde(default)]
+    src_kind: SrcKind,
+}
+// --
+
 #[derive(Clone, Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct QuoteResponse {
-    pub aggregator: Aggregators,
+    pub aggregator: Aggregator,
     pub input_mint: String,
     pub output_mint: String,
     pub in_amount: u64,
@@ -158,7 +151,7 @@ impl From<JupiterQuoteResp> for QuoteResponse {
             .collect();
 
         QuoteResponse {
-            aggregator: Aggregators::Jupiter,
+            aggregator: Aggregator::Jupiter,
             input_mint: jup.input_mint,
             output_mint: jup.output_mint,
             in_amount: parse_amount(&jup.in_amount).unwrap_or(0),
@@ -184,7 +177,7 @@ impl From<DFlowQuoteResponse> for QuoteResponse {
             .collect();
 
         QuoteResponse {
-            aggregator: Aggregators::DFlow,
+            aggregator: Aggregator::DFlow,
             input_mint: dflow.input_mint,
             output_mint: dflow.output_mint,
             in_amount: parse_amount(&dflow.in_amount).unwrap_or(0),
@@ -194,12 +187,21 @@ impl From<DFlowQuoteResponse> for QuoteResponse {
     }
 }
 
-#[derive(OpenApi)]
-#[openapi(paths(quote_handler, simulate_handler))]
-struct ApiDoc;
+#[derive(Debug, Clone)]
+pub struct ApiServerCfg {
+    pub host: String,
+    pub workers: u16,
+}
+
+pub struct ApiServer {
+    inner: actix_web::dev::Server,
+}
 
 impl ApiServer {
     pub fn new(cfg: ApiServerCfg) -> eyre::Result<ApiServer> {
+        #[derive(OpenApi)]
+        #[openapi(paths(quote_handler, simulate_handler))]
+        struct ApiDoc;
         let openapi = ApiDoc::openapi();
 
         Ok(ApiServer {
@@ -219,7 +221,7 @@ impl ApiServer {
                                 .route("/simulate", web::get().to(simulate_handler))
 
                                 .route("/markets/supported", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // analytics?
-                                .route("/markets/load", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets
+                                .route("/markets/load", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets?
                             )
                     )
             })
@@ -255,6 +257,16 @@ async fn dflow_quote(input_mint: &String, output_mint: &String, amount: u64) -> 
     Ok(parsed)
 }
 
+fn sanity_check_quote_or_sim_params(params: &QuoteOrSimParam) -> eyre::Result<()> {
+    // sanity check the mints are actual valid pubkeys
+    match (Pubkey::from_str(&params.input_mint).is_err(), Pubkey::from_str(&params.output_mint).is_err()) {
+        (true, true) => eyre::bail!("Invalid input_mint and output_mint"),
+        (true, _) => eyre::bail!("Invalid input_mint"),
+        (_, true) => eyre::bail!("Invalid output_mint"),
+        _ => Ok(()),
+    }
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/quote",
@@ -268,13 +280,11 @@ async fn dflow_quote(input_mint: &String, output_mint: &String, amount: u64) -> 
         (status = 500, description = "Internal Server Error")
     )
 )]
-async fn quote_handler(params: web::Query<QuoteParam>) -> HttpResponse {
-    // sanity check the mints are actual valid pubkeys
-    match (Pubkey::from_str(&params.input_mint).is_err(), Pubkey::from_str(&params.output_mint).is_err()) {
-        (true, true) => return HttpResponse::BadRequest().body("Invalid input_mint and output_mint"),
-        (true, _) => return HttpResponse::BadRequest().body("Invalid input_mint"),
-        (_, true) => return HttpResponse::BadRequest().body("Invalid output_mint"),
-        _ => {}
+async fn quote_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
+    counter!("API HITS", "quotes" => "/api/v1/quote").increment(1);
+
+    if let Err(e) = sanity_check_quote_or_sim_params(&params) {
+        return HttpResponse::BadRequest().body(e.to_string());
     }
 
     match params.src_kind {
@@ -300,14 +310,14 @@ async fn quote_handler(params: web::Query<QuoteParam>) -> HttpResponse {
                 (_, _) => HttpResponse::InternalServerError().json(json!({"error": "err acquiring aggregators — jupiter & dflow — market data"})),
             }
         }
-        SrcKind::Jupiter => {
-            let r = jup_quote(&params.input_mint, &params.output_mint, params.amount).await.expect("jup call err-ed out");
-            HttpResponse::Ok().json(r)
-        }
-        SrcKind::DFlow => {
-            let r = dflow_quote(&params.input_mint, &params.output_mint, params.amount).await.expect("dflow call err-ed out");
-            HttpResponse::Ok().json(r)
-        }
+        SrcKind::Jupiter => match jup_quote(&params.input_mint, &params.output_mint, params.amount).await {
+            Ok(jup) => HttpResponse::Ok().json(jup),
+            Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
+        },
+        SrcKind::DFlow => match dflow_quote(&params.input_mint, &params.output_mint, params.amount).await {
+            Ok(dflow) => HttpResponse::Ok().json(dflow),
+            Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
+        },
         SrcKind::AMMs => {
             // TODO;
             HttpResponse::NotImplemented().finish()
@@ -323,6 +333,12 @@ async fn quote_handler(params: web::Query<QuoteParam>) -> HttpResponse {
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn simulate_handler() -> HttpResponse {
+pub async fn simulate_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
+    counter!("API HITS", "simulations" => "/api/v1/simulate").increment(1);
+
+    if let Err(e) = sanity_check_quote_or_sim_params(&params) {
+        return HttpResponse::BadRequest().body(e.to_string());
+    }
+
     HttpResponse::NotImplemented().finish()
 }
