@@ -4,6 +4,7 @@ use metrics_exporter_prometheus::PrometheusHandle;
 #[derive(Debug, Clone)]
 pub struct MetricsServerCfg {
     pub host: String,
+    pub workers: u16,
     pub prometheus: PrometheusHandle,
 }
 
@@ -21,9 +22,10 @@ impl MetricsServer {
                     // shared data across all endpoints/requests
                     .app_data(web::Data::new(prometheus.clone()))
                     // routes
-                    .route("/metrics", web::get().to(metrics))
                     .route("/health", web::get().to(HttpResponse::Ok))
+                    .route("/metrics", web::get().to(metrics))
             })
+            .workers(cfg.workers as usize)
             .bind(cfg.host.as_str())?
             .run(),
         })
