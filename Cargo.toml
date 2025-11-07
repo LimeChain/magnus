@@ -34,6 +34,10 @@ spl-token = "9.0.0"
 ahash = "0.8.12"
 rust_decimal = { version = "1.39.0", features = ["macros"] }
 num_cpus = "1.17.0"
+utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
+utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
+utoipa-redoc = { version = "6.0.0", features = ["actix-web"] }
+utoipa = { version = "5.4.0", features = ["actix_extras"] }
 
 [dev-dependencies]
 criterion = "0.7.0"

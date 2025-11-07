@@ -144,7 +144,7 @@ async fn run(cfg: Cfg) {
         .tls_config(ClientTlsConfig::new().with_native_roots())
         .expect("unable to craft a tls config")
         .x_token(cfg.yellowstone_x_token)
-        .unwrap()
+        .expect("unable to determine yellowstone x-token")
         .max_decoding_message_size(1024 * 1024 * 1024)
         .connect()
         .await

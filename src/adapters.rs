@@ -112,7 +112,7 @@ pub enum SwapMode {
 
 pub type QuoteMintToReferrer = HashMap<Pubkey, Pubkey, ahash::RandomState>;
 
-pub struct SwapParams<'a, 'b> {
+pub struct SwapParams<'a> {
     pub swap_mode: SwapMode,
     pub in_amount: u64,
     pub out_amount: u64,
