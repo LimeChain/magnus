@@ -118,13 +118,18 @@ pub async fn main() -> anyhow::Result<()> {
 
     let mut ins = vec![];
 
-    ins.push(create_swap_ix(SwapDirection::WbtcToUsdc, &SOLFI_WBTC_USDC_MARKET, &acc1.pubkey(), &USDC_MINT, &WBTC_MINT, (1 as u64).pow(6)));
+    ins.push(create_swap_ix(SwapDirection::WbtcToUsdc, &SOLFI_WBTC_USDC_MARKET, &acc1.pubkey(), &USDC_MINT, &WBTC_MINT, 1_u64.pow(6)));
+
+    //let blockhash = client_http.get_latest_blockhash()?;
+    //let tx = Transaction::new_with_payer(&ins, Some(&acc1.pubkey()));
+    //let signed_tx = Transaction::new(&[acc1], tx.message, blockhash);
+
+    //client_http.send_transaction(&signed_tx)?;
 
     let blockhash = client_http.get_latest_blockhash()?;
-    let tx = Transaction::new_with_payer(&ins, Some(&acc1.pubkey()));
-    let signed_tx = Transaction::new(&[acc1], tx.message, blockhash);
-
-    client_http.send_transaction(&signed_tx)?;
+    let mut tx = Transaction::new_with_payer(&ins, Some(&acc1.pubkey()));
+    tx.sign(&[&acc1], blockhash);
+    client_http.send_transaction(&tx)?;
 
     Ok(())
 }
