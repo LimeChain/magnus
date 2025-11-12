@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum, value_parser};
+use clap::{Parser, value_parser};
 use secrecy::SecretString;
 
 #[derive(Parser, Debug)]

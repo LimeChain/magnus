@@ -1,4 +1,4 @@
-use actix_web::{App, HttpResponse, HttpServer, web};
+use actix_web::{App, HttpResponse, HttpServer, middleware::Logger, web};
 use metrics_exporter_prometheus::PrometheusHandle;
 
 #[derive(Debug, Clone)]
@@ -19,8 +19,13 @@ impl MetricsServer {
         Ok(MetricsServer {
             inner: HttpServer::new(move || {
                 App::new()
+                    // middlewares
+                    .wrap(Logger::default())
+
                     // shared data across all endpoints/requests
                     .app_data(web::Data::new(prometheus.clone()))
+
+                    // routes
                     .route("/health", web::get().to(HttpResponse::Ok))
                     .route("/metrics", web::get().to(metrics))
             })

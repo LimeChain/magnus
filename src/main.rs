@@ -2,18 +2,27 @@ pub mod api_server;
 pub mod args;
 pub mod metrics_server;
 
-use std::str::FromStr;
+use std::collections::HashMap;
 
 use clap::Parser;
 use futures_util::StreamExt as _;
-use metrics::{describe_counter, describe_histogram};
+use magnus::{
+    bootstrap::Bootstrap,
+    clients::geyser::GeyserClientWrapped,
+    helpers::{deserialize_anchor_account, geyser_acc_to_native},
+};
+use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use secrecy::ExposeSecret;
 use solana_sdk::pubkey::Pubkey;
 use tokio::signal::unix::{SignalKind, signal};
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
+use yellowstone_grpc_proto::{
+    geyser::{SubscribeRequest, subscribe_update},
+    prelude::SubscribeRequestFilterAccounts,
+};
 
 #[tokio::main]
 async fn main() {
@@ -54,76 +63,19 @@ pub struct Cfg {
     metrics_server_workers: u16,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum DEXs {
-    RaydiumCL,
-    RaydiumCP,
-    SolFi,
-    HumidiFi,
+pub trait State {}
+pub trait PropagateSignal {}
+
+pub trait Ingest {
+    fn spawn<T: State>(state: T) -> eyre::Result<()>;
 }
 
-impl DEXs {}
-
-#[derive(Clone, Debug, serde::Deserialize)]
-pub struct BootstrapMarketData {
-    pubkey: String,
-    owner: String,
-    params: BootstrapParams,
+pub trait Compute {
+    fn spawn<T: State, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
 }
 
-#[derive(Clone, Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BootstrapParams {
-    address_lookup_table_address: String,
-    routing_group: u8,
-    swap_account_size: SwapAccountSize,
-}
-
-#[derive(Copy, Clone, Debug, serde::Deserialize)]
-pub struct SwapAccountSize {
-    account_compressed_count: u8,
-    account_len: u8,
-    account_metas_count: u8,
-}
-
-#[derive(Clone, Debug)]
-pub struct Market {
-    pub pubkey: Pubkey,
-    pub owner: Pubkey,
-    pub lookup_table: Pubkey,
-    pub routing_group: u8,
-    pub swap_size: SwapAccountSize,
-}
-
-impl TryFrom<BootstrapMarketData> for Market {
-    type Error = eyre::Error;
-
-    fn try_from(data: BootstrapMarketData) -> Result<Self, Self::Error> {
-        Ok(Self {
-            pubkey: Pubkey::from_str(&data.pubkey)?,
-            owner: Pubkey::from_str(&data.owner)?,
-            lookup_table: Pubkey::from_str(&data.params.address_lookup_table_address)?,
-            routing_group: data.params.routing_group,
-            swap_size: data.params.swap_account_size,
-        })
-    }
-}
-
-#[derive(Copy, Clone, Debug, Default)]
-pub struct Bootstrap;
-
-impl Bootstrap {
-    pub async fn ingest_from_jupiter() -> eyre::Result<Vec<Market>> {
-        let response = reqwest::get("https://cache.jup.ag/markets?v=4").await?;
-        let markets: Vec<BootstrapMarketData> = response.json().await?;
-        markets.into_iter().map(Market::try_from).collect()
-    }
-
-    pub fn ingest_from_file(file: &str) -> eyre::Result<Vec<Market>> {
-        let content = std::fs::read_to_string(file)?;
-        let markets: Vec<BootstrapMarketData> = serde_json::from_str(&content)?;
-        markets.into_iter().map(Market::try_from).collect()
-    }
+pub trait Propagate {
+    fn spawn<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
 }
 
 async fn run(cfg: Cfg) {
@@ -141,7 +93,7 @@ async fn run(cfg: Cfg) {
 
     let client_http = solana_client::rpc_client::RpcClient::new(cfg.http_url);
     let client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
-    let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
+    let mut client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
         .tls_config(ClientTlsConfig::new().with_native_roots())
         .expect("unable to craft a tls config")
@@ -156,10 +108,55 @@ async fn run(cfg: Cfg) {
         Some(file) => Bootstrap::ingest_from_file(file).expect("unable to ingest from file"),
         None => Bootstrap::ingest_from_jupiter().await.expect("unable to ingest from jupiter"),
     };
-    let accounts = markets.iter().map(|market| market.pubkey).collect::<Vec<_>>();
+    let accounts = markets.iter().map(|market| market.pubkey.to_string()).collect::<Vec<_>>();
     debug!("loaded accounts | {:?}", accounts);
 
     let _ = tokio::spawn(async move {
+        let mut client_geyser = GeyserClientWrapped::new(client_geyser);
+        let filter = client_geyser.craft_filter(accounts).await;
+        let mut stream = client_geyser.subscribe(filter).await;
+
+        while let Some(message) = stream.next().await {
+            match message {
+                Ok(msg) => {
+                    // Handle the SubscribeUpdate
+                    if let Some(update) = msg.update_oneof
+                        && let subscribe_update::UpdateOneof::Account(account_update) = update
+                        && let Some(account_info) = account_update.account
+                    {
+                        let pubkey = Pubkey::try_from(account_info.pubkey.as_slice()).expect("Invalid pubkey");
+
+                        // Convert to solana Account type
+                        let account = geyser_acc_to_native(&account_info);
+
+                        // Deserialize as PoolState
+                        match deserialize_anchor_account::<raydium_cp_swap::states::PoolState>(&account) {
+                            Ok(pool_state) => {
+                                info!("Pool State Update:");
+                                info!("  Pubkey: {}", pubkey);
+                                info!("  Slot: {}", account_update.slot);
+                                info!("  Token 0 Mint: {}", pool_state.token_0_mint);
+                                info!("  Token 1 Mint: {}", pool_state.token_1_mint);
+                                info!("  Token 0 Vault: {}", pool_state.token_0_vault);
+                                info!("  Token 1 Vault: {}", pool_state.token_1_vault);
+
+                                let v = pool_state.lp_supply;
+                                info!("  LP Supply: {}", v);
+                            }
+                            Err(e) => {
+                                error!("Failed to deserialize PoolState: {}", e);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Error receiving message: {}", e);
+                }
+            }
+        }
+    });
+
+    tokio::spawn(async move {
         api_server::ApiServer::new(api_server::ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers })
             .expect("failed to create server")
             .start()
@@ -167,7 +164,7 @@ async fn run(cfg: Cfg) {
             .expect("failed to start server")
     });
 
-    let _ = tokio::spawn(async move {
+    tokio::spawn(async move {
         metrics_server::MetricsServer::new(metrics_server::MetricsServerCfg { host: cfg.metrics_server_host, workers: cfg.metrics_server_workers, prometheus })
             .expect("failed to create server")
             .start()
