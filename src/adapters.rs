@@ -7,6 +7,7 @@ use crate::adapters::aggregators::AggregatorKind;
 
 pub mod aggregators;
 pub mod amms;
+pub mod helpers;
 
 /// Defines the base traits for downstream liquidity adapters
 /// Implementations usually rely on a child interface, like [`Amm`] and [`Aggregator`]

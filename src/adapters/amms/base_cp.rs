@@ -1,22 +1,26 @@
-use std::{collections::HashMap, convert::TryInto, sync::LazyLock};
+/*
+ * CP-AMM adapters rely on the same principles:
+ * - x*y = k
+ * - two reserves representing the assets in the pool
+ */
 
-use anchor_lang::{prelude::Pubkey, pubkey};
-//use anchor_lang::prelude::Pubkey;
-use anyhow::{Context, Result, ensure};
-use jupiter_amm_interface::{AccountMap, AmmContext, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams, try_get_account_data};
+use std::convert::TryInto;
+
+use anchor_lang::prelude::Pubkey;
+use anyhow::{Result, ensure};
+pub use jupiter_amm_interface::{
+    AccountMap, Amm, AmmContext, AmmLabel, AmmProgramIdToLabel, KeyedAccount, KeyedUiAccount, Quote, QuoteParams, Side, SingleProgramAmm, Swap, SwapAndAccountMetas, SwapMode,
+    SwapParams, single_program_amm, try_get_account_data,
+};
 use solana_program::program_pack::Pack;
-//use solana_sdk::program_pack::Pack;
-//use program_interfaces::jupiter_dex_interfaces::client::accounts::TokenSwap;
 use spl_token::state::Account as TokenAccount;
 
 use crate::{
-    amm::{Amm, Swap, to_dex_account_metas},
-    amms::{account_meta_from_token_swap::TokenSwap, *},
+    adapters::helpers::{TokenSwap, get_swap_curve_result, to_dex_account_metas},
     curves::{
         base::{CurveType, SwapCurve},
         calculator::TradeDirection,
     },
-    math::swap_curve_info::get_swap_curve_result,
     state::SwapV1,
 };
 

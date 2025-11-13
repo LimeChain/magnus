@@ -8,15 +8,12 @@ pub mod bootstrap;
 pub mod clients;
 // pub mod curves;
 // pub mod fees;
+pub mod curves;
 pub mod helpers;
 pub mod ingest;
 pub mod propagate;
 // pub mod solve;
 
 // temporary
-pub mod amms;
-pub mod math;
-pub use amms::amm;
-pub mod curves;
 pub mod error;
 pub mod state;

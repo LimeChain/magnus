@@ -11,9 +11,9 @@ use solana_sdk::{account::Account, clock::Clock, pubkey::Pubkey};
 
 use crate::adapters::{Adapter, Quote, QuoteParams, SwapAndAccountMetas, SwapParams};
 
-pub mod base_clamm;
-pub mod base_cpamm;
-pub mod raydium_cpamm;
+pub mod base_cl;
+pub mod base_cp;
+pub mod raydium_cp;
 
 /// ..
 pub trait Amm: Adapter {

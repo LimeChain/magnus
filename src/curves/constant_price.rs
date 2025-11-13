@@ -149,10 +149,7 @@ mod tests {
     use proptest::prelude::*;
 
     use super::*;
-    use crate::curves::calculator::{
-        INITIAL_SWAP_POOL_AMOUNT,
-        test::{CONVERSION_BASIS_POINTS_GUARANTEE, check_curve_value_from_swap},
-    };
+    use crate::curves::calculator::test::check_curve_value_from_swap;
 
     #[test]
     fn swap_calculation_no_price() {

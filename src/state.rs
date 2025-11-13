@@ -268,7 +268,7 @@ mod tests {
     use std::convert::TryInto;
 
     use super::*;
-    use crate::curve::offset::OffsetCurve;
+    use crate::curves::offset::OffsetCurve;
 
     const TEST_FEES: Fees = Fees {
         trade_fee_numerator: 1,
