@@ -509,7 +509,7 @@ checksum = "3c08cb5d762c0694f74bd02c9a5b04ea53cefc496e2c27b3234acffca5cd076b"
 dependencies = [
  "anchor-lang",
  "mpl-token-metadata",
- "spl-associated-token-account",
+ "spl-associated-token-account 6.0.0",
  "spl-memo",
  "spl-pod 0.5.1",
  "spl-token 7.0.0",
@@ -3297,6 +3297,7 @@ dependencies = [
  "num-traits",
  "num_cpus",
  "proptest",
+ "raydium-amm-v3",
  "raydium-cp-swap",
  "reqwest",
  "rust_decimal",
@@ -3304,12 +3305,14 @@ dependencies = [
  "serde",
  "serde_json",
  "solana-client 3.0.8",
+ "solana-commitment-config 3.1.0",
  "solana-cpi 3.0.0",
  "solana-instruction 3.0.0",
  "solana-program 2.3.0",
  "solana-sdk 3.0.0",
+ "spl-associated-token-account 8.0.0",
  "spl-math",
- "spl-token 6.0.0",
+ "spl-token 8.0.0",
  "spl-token-2022 10.0.0",
  "thiserror 2.0.17",
  "tokio",
@@ -4373,6 +4376,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "raydium-amm-v3"
+version = "0.1.0"
+source = "git+https://github.com/raydium-io/raydium-clmm#d4ec101534724a20e1eb38a9b997f8b391c5100f"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "arrayref",
+ "bytemuck",
+ "solana-security-txt",
+ "spl-token-2022 7.0.0",
+ "uint 0.9.5",
+]
+
+[[package]]
 name = "raydium-cp-swap"
 version = "0.2.0"
 source = "git+https://github.com/raydium-io/raydium-cp-swap#ec3b20ddf74d4f3c69f6ac475fde85755a57b0e6"
@@ -4384,7 +4401,7 @@ dependencies = [
  "solana-security-txt",
  "spl-math",
  "spl-token-2022 7.0.0",
- "uint",
+ "uint 0.10.0",
 ]
 
 [[package]]
@@ -5570,7 +5587,7 @@ dependencies = [
  "rayon",
  "solana-account 3.2.0",
  "solana-client-traits 3.0.0",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-connection-cache 3.0.8",
  "solana-epoch-info 3.0.0",
  "solana-hash 3.0.0",
@@ -5626,7 +5643,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08618ed587e128105510c54ae3e456b9a06d674d8640db75afe66dad65cb4e02"
 dependencies = [
  "solana-account 3.2.0",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-epoch-info 3.0.0",
  "solana-hash 3.0.0",
  "solana-instruction 3.0.0",
@@ -5698,9 +5715,9 @@ dependencies = [
 
 [[package]]
 name = "solana-commitment-config"
-version = "3.0.0"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fa5933a62dadb7d3ed35e6329de5cebb0678acc8f9cfdf413269084eeccc63f"
+checksum = "2e41a3917076a8b5375809078ae3a6fb76a53e364b596ef8c4265e7f410876f3"
 dependencies = [
  "serde",
  "serde_derive",
@@ -7444,7 +7461,7 @@ dependencies = [
  "solana-account 3.2.0",
  "solana-account-decoder-client-types 3.0.8",
  "solana-clock 3.0.0",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-epoch-info 3.0.0",
  "solana-epoch-schedule 3.0.0",
  "solana-feature-gate-interface 3.0.0",
@@ -7530,7 +7547,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f981ef4da0734f459f5b71d1e8dcd6807c17721681714099c90ff6848c7dbb4a"
 dependencies = [
  "solana-account 3.2.0",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-hash 3.0.0",
  "solana-message 3.0.1",
  "solana-nonce 3.0.0",
@@ -7581,7 +7598,7 @@ dependencies = [
  "solana-account 3.2.0",
  "solana-account-decoder-client-types 3.0.8",
  "solana-clock 3.0.0",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-fee-calculator 3.0.0",
  "solana-inflation 3.0.0",
  "solana-pubkey 3.0.0",
@@ -8516,7 +8533,7 @@ dependencies = [
  "rayon",
  "solana-client-traits 3.0.0",
  "solana-clock 3.0.0",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-connection-cache 3.0.8",
  "solana-epoch-schedule 3.0.0",
  "solana-measure 3.0.8",
@@ -8755,7 +8772,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "solana-account-decoder-client-types 3.0.8",
- "solana-commitment-config 3.0.0",
+ "solana-commitment-config 3.1.0",
  "solana-instruction 3.0.0",
  "solana-message 3.0.1",
  "solana-pubkey 3.0.0",
@@ -8994,6 +9011,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "spl-associated-token-account"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0242277e290c023de8826f504abcf9206b3cd4e18d9ace4ec59a698b2828e88b"
+dependencies = [
+ "borsh 1.5.7",
+ "num-derive 0.4.2",
+ "num-traits",
+ "solana-account-info 3.0.0",
+ "solana-cpi 3.0.0",
+ "solana-instruction 3.0.0",
+ "solana-msg 3.0.0",
+ "solana-program-entrypoint 3.1.0",
+ "solana-program-error 3.0.0",
+ "solana-pubkey 3.0.0",
+ "solana-rent 3.0.0",
+ "solana-sdk-ids 3.0.0",
+ "solana-system-interface 2.0.0",
+ "solana-sysvar 3.0.0",
+ "spl-associated-token-account-interface",
+ "spl-token-2022-interface",
+ "spl-token-interface",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "spl-associated-token-account-client"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9144,7 +9187,7 @@ dependencies = [
  "num-traits",
  "solana-program 2.3.0",
  "thiserror 1.0.69",
- "uint",
+ "uint 0.10.0",
 ]
 
 [[package]]
@@ -9352,21 +9395,6 @@ dependencies = [
  "spl-program-error 0.8.0",
  "spl-type-length-value 0.9.0",
  "thiserror 2.0.17",
-]
-
-[[package]]
-name = "spl-token"
-version = "6.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70a0f06ac7f23dc0984931b1fe309468f14ea58e32660439c1cef19456f5d0e3"
-dependencies = [
- "arrayref",
- "bytemuck",
- "num-derive 0.4.2",
- "num-traits",
- "num_enum",
- "solana-program 2.3.0",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -10603,6 +10631,17 @@ name = "typenum"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
+
+[[package]]
+name = "uint"
+version = "0.9.5"
+source = "git+https://github.com/raydium-io/parity-common#43a0303b9c2a23a00508816bd6d5a2e9381f143c"
+dependencies = [
+ "byteorder",
+ "crunchy",
+ "hex",
+ "static_assertions",
+]
 
 [[package]]
 name = "uint"

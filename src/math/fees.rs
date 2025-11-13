@@ -1,6 +1,6 @@
 use rust_decimal::{Decimal, prelude::FromPrimitive};
 
-use crate::curve::fees::Fees as TokenSwapFees;
+use crate::curves::fees::Fees as TokenSwapFees;
 
 #[derive(Clone, Debug, Default)]
 pub struct Fees(TokenSwapFees);

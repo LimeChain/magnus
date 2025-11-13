@@ -17,7 +17,7 @@ use spl_token_2022::{
 };
 
 use crate::{
-    curve::{base::SwapCurve, fees::Fees},
+    curves::{base::SwapCurve, fees::Fees},
     error::SwapError,
 };
 

@@ -1,7 +1,7 @@
 use std::fmt;
 
 use anyhow::Context;
-use futures_util::StreamExt;
+use futures_util::StreamExt as _;
 use reqwest::Client;
 use serde::Serialize;
 use serde_json::json;
@@ -166,7 +166,7 @@ pub fn create_swap_ix(direction: SwapDirection, market: &Pubkey, user: &Pubkey, 
             AccountMeta::new(get_associated_token_address(market, token_b), false),
             AccountMeta::new(get_associated_token_address(user, token_a), false),
             AccountMeta::new(get_associated_token_address(user, token_b), false),
-            AccountMeta::new_readonly(spl_token::id(), false),
+            AccountMeta::new_readonly(TOKEN_PROGRAM, false),
             AccountMeta::new_readonly(sysvar::instructions::id(), false),
         ],
         data: create_instruction_data(direction, amount),

@@ -5,7 +5,7 @@ use crate::{
     helpers::parse_amount,
 };
 
-const API_URL: &str = "https://quote-api.jup.ag";
+const API_URL: &str = "https://lite-api.jup.ag";
 
 pub struct Jupiter;
 

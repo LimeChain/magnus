@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 
 use super::{fees::Fees, token_swap::SwapResult};
-use crate::curve::{base::SwapCurve, calculator::TradeDirection, fees::Fees as TokenSwapFees};
+use crate::curves::{base::SwapCurve, calculator::TradeDirection, fees::Fees as TokenSwapFees};
 
 pub fn get_swap_curve_result(
     swap_curve: &SwapCurve,

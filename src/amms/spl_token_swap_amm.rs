@@ -3,15 +3,16 @@ use std::{collections::HashMap, convert::TryInto, sync::LazyLock};
 use anchor_lang::{prelude::Pubkey, pubkey};
 //use anchor_lang::prelude::Pubkey;
 use anyhow::{Context, Result, ensure};
-use jupiter_amm_interface::{AccountMap, AmmContext, AmmLabel, AmmProgramIdToLabel, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams, try_get_account_data};
+use jupiter_amm_interface::{AccountMap, AmmContext, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams, try_get_account_data};
 use solana_program::program_pack::Pack;
+//use solana_sdk::program_pack::Pack;
 //use program_interfaces::jupiter_dex_interfaces::client::accounts::TokenSwap;
 use spl_token::state::Account as TokenAccount;
 
 use crate::{
     amm::{Amm, Swap, to_dex_account_metas},
     amms::{account_meta_from_token_swap::TokenSwap, *},
-    curve::{
+    curves::{
         base::{CurveType, SwapCurve},
         calculator::TradeDirection,
     },
@@ -19,17 +20,7 @@ use crate::{
     state::SwapV1,
 };
 
-pub mod spl_token_swap_programs {
-    use super::*;
-    pub const ORCA_V1: Pubkey = pubkey!("DjVE6JNiYqPL2QXyCUUh8rNjHrbz9hXHNYt99MQ59qw1");
-    pub const ORCA_V2: Pubkey = pubkey!("9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP");
-    pub const STEPN: Pubkey = pubkey!("Dooar9JkhdZ7J3LHN3A7YCuoGRUggXhQaG4kijfLGU2j");
-    pub const SAROS: Pubkey = pubkey!("SSwapUtytfBdBn1b9NUGG6foMVPtcWgpRU32HToDUZr");
-    pub const PENGUIN: Pubkey = pubkey!("PSwapMdSai8tjrEXcxFeQth87xC4rRsa4VA5mhGhXkP");
-    pub const SPL_TOKEN_SWAP: Pubkey = pubkey!("SwaPpA9LAaLfeLi3a68M4DjnLqgtticKg6CnyNwgAC8");
-}
-
-pub struct SplTokenSwapAmm {
+pub struct ConstantProductAmm {
     key: Pubkey,
     authority: Pubkey,
     label: String,
@@ -39,23 +30,9 @@ pub struct SplTokenSwapAmm {
     program_id: Pubkey,
 }
 
-impl AmmProgramIdToLabel for SplTokenSwapAmm {
-    const PROGRAM_ID_TO_LABELS: &[(Pubkey, AmmLabel)] = &[
-        (spl_token_swap_programs::ORCA_V1, "Orca V1"),
-        (spl_token_swap_programs::ORCA_V2, "Orca V2"),
-        (spl_token_swap_programs::STEPN, "StepN"),
-        (spl_token_swap_programs::SAROS, "Saros"),
-        (spl_token_swap_programs::PENGUIN, "Penguin"),
-        (spl_token_swap_programs::SPL_TOKEN_SWAP, "Token Swap"),
-    ];
-}
-
-pub static SPL_TOKEN_SWAP_PROGRAMS: LazyLock<HashMap<Pubkey, String>> =
-    LazyLock::new(|| HashMap::from_iter(SplTokenSwapAmm::PROGRAM_ID_TO_LABELS.iter().map(|(program_id, amm_label)| (*program_id, (*amm_label).into()))));
-
-impl Clone for SplTokenSwapAmm {
+impl Clone for ConstantProductAmm {
     fn clone(&self) -> Self {
-        SplTokenSwapAmm {
+        ConstantProductAmm {
             key: self.key,
             authority: self.authority,
             label: self.label.clone(),
@@ -79,7 +56,7 @@ impl Clone for SplTokenSwapAmm {
     }
 }
 
-impl Amm for SplTokenSwapAmm {
+impl Amm for ConstantProductAmm {
     fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> Result<Self> {
         // Skip the first byte which is version
         let state = SwapV1::unpack(&keyed_account.account.data[1..])?;
@@ -89,7 +66,9 @@ impl Amm for SplTokenSwapAmm {
 
         let reserve_mints = [state.token_a_mint, state.token_b_mint];
 
-        let label = SPL_TOKEN_SWAP_PROGRAMS.get(&keyed_account.account.owner).cloned().context("Label not found")?;
+        // export outside on a per-exchange basis
+        let label = "..".to_string();
+
         let program_id = keyed_account.account.owner;
         Ok(Self {
             key: keyed_account.key,

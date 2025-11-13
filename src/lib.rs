@@ -17,6 +17,6 @@ pub mod propagate;
 pub mod amms;
 pub mod math;
 pub use amms::amm;
-pub mod curve;
+pub mod curves;
 pub mod error;
 pub mod state;
