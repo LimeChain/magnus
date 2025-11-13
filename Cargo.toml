@@ -7,9 +7,9 @@ edition = "2024"
 path = "src/lib.rs"
 
 # temporary
-[[bin]]
-name = "solfi_swap"
-path = "scripts/solfi_swap.rs"
+#[[bin]]
+#name = "solfi_swap"
+#path = "scripts/solfi_swap.rs"
 
 [[bin]]
 name = "raydium-clmm_swap"
@@ -32,6 +32,7 @@ clap = { version = "4.5.50", features = ["derive", "env", "color", "std"] }
 eyre = "0.6.12"
 futures = "0.3.31"
 futures-util = "0.3.31"
+jupiter-amm-interface = "0.6.0"
 metrics = "0.24.2"
 metrics-exporter-prometheus = "0.17.2"
 num_cpus = "1.17.0"
@@ -39,15 +40,19 @@ num_cpus = "1.17.0"
 raydium-cp-swap = { git = "https://github.com/raydium-io/raydium-cp-swap", package = "raydium-cp-swap", features = ["no-entrypoint", "client"] }
 reqwest = { version = "0.12.24" }
 rust_decimal = { version = "1.39.0", features = ["macros"] }
-secrecy = "0.10.3"
+secrecy = "0.10.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 solana-client = "3.0.8"
 solana-cpi = "3.0.0"
 solana-instruction = "3.0.0"
 solana-sdk = "3.0.0"
-spl-associated-token-account = "8.0.0"
-spl-token = "9.0.0"
+#solana-program = "3.0.0"
+# spl-associated-token-account = "8.0.0"
+# spl-pod = "0.7.1"
+spl-token = "6.0.0"
+#spl-token-swap = "2.1.0"
+#spl-token-swap = "3.0.0"
 thiserror = "2.0.17"
 tokio = { version = "1.48.0", features = ["full"] }
 tonic = { version = "0.14.2", features = ["tls-native-roots", "tls-ring"] }
@@ -60,9 +65,20 @@ utoipa-rapidoc = { version = "6.0.0", features = ["actix-web"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
 yellowstone-grpc-client = "10.1.1"
 yellowstone-grpc-proto = "10.1.1"
+arrayref = "0.3.9"
+enum_dispatch = "0.3.13"
+num-derive = "0.4"
+num-traits = "0.2"
+solana-program = "2.0.3"
+spl-token-2022 = "10.0.0"
+spl-math = "0.3.0"
 #anchor-client = { version = "0.32.1" }
 #anchor-lang = { version = "0.32.1" }
 #anchor-spl = { version = "0.32.1" }
+#zeroize = "1.8.2"
+#curve25519-dalek = "4.1.3"
+#zeroize = "1.8.2"
 
 [dev-dependencies]
 criterion = "0.7.0"
+proptest = "1.9.0"
