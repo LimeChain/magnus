@@ -6,6 +6,8 @@
 pub mod adapters;
 pub mod bootstrap;
 pub mod clients;
+pub mod curves;
+pub mod fees;
 pub mod helpers;
 pub mod ingest;
 pub mod propagate;

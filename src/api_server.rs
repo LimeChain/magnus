@@ -3,7 +3,7 @@ use std::str::FromStr;
 use actix_web::{App, HttpResponse, HttpServer, middleware::Logger, web};
 use magnus::adapters::{
     QuoteParams, QuoteResponse, SwapMode,
-    aggregators::{Aggregator as _, dflow::DFlow, jupiter::Jupiter},
+    aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
 };
 use metrics::counter;
 use serde::Deserialize;
@@ -132,25 +132,16 @@ async fn quote_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
 
     match params.src_kind {
         SrcKind::Aggregators => {
-            let jup_param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
-            let dflow_param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
+            let aggregators: Vec<Box<dyn Aggregator>> = vec![Box::new(Jupiter {}), Box::new(DFlow {})];
+            let quote_param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
-            // spawn separate tasks for the different aggregators - then await their concurrent exec
-            let jup_handle = tokio::spawn(async move { Jupiter {}.quote(&jup_param).await });
-            let dflow_handle = tokio::spawn(async move { DFlow {}.quote(&dflow_param).await });
+            let handles: Vec<_> = aggregators.into_iter().map(|agg| tokio::spawn(async move { agg.quote(&quote_param.clone()).await })).collect();
+            let res = futures::future::join_all(handles).await;
+            let best_quote = res.into_iter().filter_map(|handle_result| handle_result.ok().and_then(|quote_result| quote_result.ok())).max_by_key(|quote| quote.out_amount);
 
-            let (jup_res, dflow_res) = tokio::join!(jup_handle, dflow_handle);
-            let (jup_res, dflow_res) = (jup_res.expect("jup err-ed out"), dflow_res.expect("dflow err-ed out"));
-
-            // check jup & dflow
-            match (jup_res, dflow_res) {
-                (Ok(jup), Ok(dflow)) => match jup.out_amount > dflow.out_amount {
-                    true => HttpResponse::Ok().json(jup),
-                    false => HttpResponse::Ok().json(dflow),
-                },
-                (Ok(jup), _) => HttpResponse::Ok().json(jup),
-                (_, Ok(dflow)) => HttpResponse::Ok().json(dflow),
-                (_, _) => HttpResponse::InternalServerError().json(json!({"error": "err acquiring aggregators market data"})),
+            match best_quote {
+                Some(quote) => HttpResponse::Ok().json(quote),
+                None => HttpResponse::InternalServerError().json(json!({"error": "err acquiring aggregators market data"})),
             }
         }
         SrcKind::Jupiter => {

@@ -67,15 +67,15 @@ pub trait State {}
 pub trait PropagateSignal {}
 
 pub trait Ingest {
-    fn spawn<T: State>(state: T) -> eyre::Result<()>;
+    fn ingest<T: State>(state: T) -> eyre::Result<()>;
 }
 
-pub trait Compute {
-    fn spawn<T: State, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
+pub trait Strategy {
+    fn compute<T: State, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
 }
 
-pub trait Propagate {
-    fn spawn<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
+pub trait Payload {
+    fn execute<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
 }
 
 async fn run(cfg: Cfg) {

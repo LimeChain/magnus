@@ -5,4 +5,7 @@
  */
 
 trait BaseCPAMM {}
- 
+
+pub struct CPAMM;
+
+impl BaseCPAMM for CPAMM {}

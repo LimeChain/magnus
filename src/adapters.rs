@@ -12,7 +12,7 @@ pub mod amms;
 /// Implementations usually rely on a child interface, like [`Amm`] and [`Aggregator`]
 pub trait Adapter {}
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct QuoteParams {
     pub amount: u64,
     pub input_mint: Pubkey,

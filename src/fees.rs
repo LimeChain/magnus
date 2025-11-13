@@ -1,8 +1,9 @@
-use rust_decimal::{Decimal, prelude::FromPrimitive};
 //use spl_token_swap::curve::{base::SwapCurve, calculator::TradeDirection, fees::Fees as TokenSwapFees};
 
 //#[derive(Clone, Debug, Default, PartialEq)]
 //pub struct Fees(TokenSwapFees);
+
+use rust_decimal::{Decimal, prelude::FromPrimitive};
 
 /// Encapsulates all fee information and calculations for swap operations
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -38,9 +39,9 @@ pub struct TokenSwapFees {
 }
 
 impl TokenSwapFees {
-    //pub fn new(trade_fee_numerator: u64, trade_fee_denominator: u64, owner_trade_fee_numerator: u64, owner_trade_fee_denominator: u64) -> Self {
-    //    Self(TokenSwapFees { trade_fee_numerator, trade_fee_denominator, owner_trade_fee_numerator, owner_trade_fee_denominator, ..Default::default() })
-    //}
+    pub fn new(trade_fee_numerator: u64, trade_fee_denominator: u64, owner_trade_fee_numerator: u64, owner_trade_fee_denominator: u64) -> Self {
+        TokenSwapFees { trade_fee_numerator, trade_fee_denominator, owner_trade_fee_numerator, owner_trade_fee_denominator, ..Default::default() }
+    }
 
     pub fn fee_pct(&self) -> Option<Decimal> {
         let trade_fee_pct = if self.trade_fee_denominator > 0 {
@@ -178,5 +179,3 @@ fn validate_fraction(numerator: u64, denominator: u64) -> eyre::Result<()> {
         Ok(())
     }
 }
-
-impl TokenSwapFees {}
