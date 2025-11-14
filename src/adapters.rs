@@ -60,6 +60,8 @@ pub struct SwapAndAccountMetas {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Swap {
+    Base, // TODO: must be removed
+
     RaydiumCP,
 }
 

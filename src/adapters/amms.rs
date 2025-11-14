@@ -1,4 +1,5 @@
 use std::{
+    boxed::Box,
     collections::{HashMap, HashSet},
     sync::{
         Arc,
@@ -17,7 +18,7 @@ pub mod raydium_cp;
 pub mod swap_state;
 
 /// ..
-pub trait Amm: Adapter {
+pub trait Amm: Adapter + Send + Sync {
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> eyre::Result<Self>
     where
         Self: Sized;
@@ -77,6 +78,8 @@ pub trait Amm: Adapter {
     fn is_active(&self) -> bool {
         true
     }
+
+    fn clone_amm(&self) -> Box<dyn Amm>;
 }
 
 #[derive(Clone, Deserialize, Serialize)]

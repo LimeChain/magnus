@@ -6,20 +6,12 @@ use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 use enum_dispatch::enum_dispatch;
 use solana_program::{
     account_info::AccountInfo,
-    msg,
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
-    pubkey::Pubkey,
 };
-use spl_token_2022::{
-    extension::StateWithExtensions,
-    state::{Account, AccountState},
-};
+use solana_sdk::pubkey::Pubkey;
 
-use crate::{
-    curves::{base::SwapCurve, fees::Fees},
-    error::SwapError,
-};
+use crate::curves::{base::SwapCurve, fees::Fees};
 
 /// Trait representing access to program state across all versions
 #[enum_dispatch]
@@ -57,7 +49,6 @@ pub trait SwapState {
 /// All versions of SwapState
 #[enum_dispatch(SwapState)]
 pub enum SwapVersion {
-    /// Latest version, used for all new swaps
     SwapV1,
 }
 
@@ -100,8 +91,6 @@ impl SwapVersion {
     }
 }
 
-/// Program states.
-#[repr(C)]
 #[derive(Debug, Default, PartialEq)]
 pub struct SwapV1 {
     /// Initialized state.

@@ -1,25 +1,12 @@
-use anchor_lang::{
-    ToAccountMetas,
-    prelude::{AccountMeta, Pubkey},
-};
-use anyhow::{Context, Result};
-pub use jupiter_amm_interface::{
-    AccountMap, Amm, AmmContext, AmmLabel, AmmProgramIdToLabel, KeyedAccount, KeyedUiAccount, Quote, QuoteParams, Side, SingleProgramAmm, Swap, SwapAndAccountMetas, SwapMode,
-    SwapParams, single_program_amm, try_get_account_data,
-};
+use eyre::Result;
 use rust_decimal::Decimal;
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
 
 use crate::curves::{
     base::SwapCurve,
     calculator::TradeDirection,
     fees::{Fees, Fees as TokenSwapFees},
 };
-
-pub fn to_dex_account_metas(program_id: anchor_lang::prelude::Pubkey, accounts: impl ToAccountMetas) -> Vec<AccountMeta> {
-    let mut account_metas = vec![AccountMeta::new_readonly(program_id, false)];
-    account_metas.extend(accounts.to_account_metas(None));
-    account_metas
-}
 
 #[derive(Copy, Clone, Debug)]
 pub struct TokenSwap {
@@ -54,15 +41,12 @@ impl From<TokenSwap> for Vec<AccountMeta> {
     }
 }
 
-impl ToAccountMetas for TokenSwap {
-    fn to_account_metas(&self, _is_signer: Option<bool>) -> Vec<AccountMeta> {
-        vec![AccountMeta::default()]
-    }
-}
+pub fn to_dex_account_metas(program_id: Pubkey, token_swap: TokenSwap) -> Vec<AccountMeta> {
+    let mut account_metas = vec![AccountMeta::new_readonly(program_id, false)];
+    account_metas.extend(Vec::<AccountMeta>::from(token_swap));
 
-//pub trait TokenSwap {
-//    fn exchange(&self, token_amounts: &[u128], in_amount: u128, input_index: usize, output_index: Option<usize>) -> Option<SwapResult>;
-//}
+    account_metas
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct SwapResult {
@@ -80,10 +64,10 @@ pub fn get_swap_curve_result(
     trade_direction: TradeDirection,
     fees: &TokenSwapFees,
 ) -> Result<SwapResult> {
-    let curve_result = swap_curve.swap(amount.into(), swap_source_amount, swap_destination_amount, trade_direction, fees).context("quote failed")?;
+    let curve_result = swap_curve.swap(amount.into(), swap_source_amount, swap_destination_amount, trade_direction, fees).ok_or_else(|| eyre::eyre!(".. failed to swap"))?;
 
     let fees = Fees::new(fees.trade_fee_numerator, fees.trade_fee_denominator, fees.owner_trade_fee_numerator, fees.owner_trade_fee_denominator);
-    let fee_pct = fees.fee_pct().context("failed to get fee pct")?;
+    let fee_pct = fees.fee_pct().ok_or_else(|| eyre::eyre!("Failed to calculate fee percentage"))?;
 
     Ok(SwapResult {
         expected_output_amount: curve_result.destination_amount_swapped,

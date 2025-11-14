@@ -6,29 +6,21 @@
 
 use std::convert::TryInto;
 
-use anchor_lang::prelude::Pubkey;
-//use solana_sdk::pubkey::Pubkey;
-use anyhow::{Context, Result, ensure};
-pub use jupiter_amm_interface::{
-    AccountMap, Amm, AmmContext, AmmLabel, AmmProgramIdToLabel, KeyedAccount, KeyedUiAccount, Quote, QuoteParams, Side, SingleProgramAmm, Swap, SwapAndAccountMetas, SwapMode,
-    SwapParams,
-};
 use solana_program::program_pack::Pack;
+use solana_sdk::pubkey::Pubkey;
 use spl_token::state::Account as TokenAccount;
 
-pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> Result<&'a [u8]> {
-    account_map.get(address).map(|account| account.data.as_slice()).with_context(|| format!("Could not find address: {address}"))
+pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> eyre::Result<&'a [u8]> {
+    account_map.get(address).map(|account| account.data.as_slice()).ok_or_else(|| eyre::eyre!("Could not find address: {address}"))
 }
 
 use crate::{
     adapters::{
-        amms::swap_state::SwapV1,
+        Adapter, Quote, QuoteParams, Swap, SwapAndAccountMetas, SwapParams,
+        amms::{AccountMap, Amm, AmmContext, KeyedAccount, swap_state::SwapV1},
         helpers::{TokenSwap, get_swap_curve_result, to_dex_account_metas},
     },
-    curves::{
-        base::{CurveType, SwapCurve},
-        calculator::TradeDirection,
-    },
+    curves::{base::SwapCurve, calculator::TradeDirection},
 };
 
 pub struct ConstantProductAmm {
@@ -67,8 +59,10 @@ impl Clone for ConstantProductAmm {
     }
 }
 
+impl Adapter for ConstantProductAmm {}
+
 impl Amm for ConstantProductAmm {
-    fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> Result<Self> {
+    fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> eyre::Result<Self> {
         let state = SwapV1::unpack(&keyed_account.account.data[1..])?;
         let reserve_mints = [state.token_a_mint, state.token_b_mint];
 
@@ -107,7 +101,7 @@ impl Amm for ConstantProductAmm {
         vec![self.state.token_a, self.state.token_b]
     }
 
-    fn update(&mut self, account_map: &AccountMap) -> Result<()> {
+    fn update(&mut self, account_map: &AccountMap) -> eyre::Result<()> {
         let token_a_account = try_get_account_data(account_map, &self.state.token_a)?;
         let token_a_token_account = TokenAccount::unpack(token_a_account)?;
 
@@ -119,7 +113,7 @@ impl Amm for ConstantProductAmm {
         Ok(())
     }
 
-    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote> {
+    fn quote(&self, quote_params: &QuoteParams) -> eyre::Result<Quote> {
         let (trade_direction, swap_source_amount, swap_destination_amount) = if quote_params.input_mint == self.reserve_mints[0] {
             (TradeDirection::AtoB, self.reserves[0], self.reserves[1])
         } else {
@@ -141,7 +135,7 @@ impl Amm for ConstantProductAmm {
         11
     }
 
-    fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas> {
+    fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> eyre::Result<SwapAndAccountMetas> {
         let SwapParams { source_mint, destination_token_account, source_token_account, token_transfer_authority, .. } = swap_params;
 
         let (swap_source, swap_destination) = if *source_mint == self.state.token_a_mint {
@@ -151,12 +145,12 @@ impl Amm for ConstantProductAmm {
         };
 
         Ok(SwapAndAccountMetas {
-            swap: Swap::TokenSwap,
+            swap: Swap::Base,
             account_metas: to_dex_account_metas(
                 self.program_id,
                 TokenSwap {
                     token_swap_program: self.program_id,
-                    token_program: spl_token::ID,
+                    token_program: Pubkey::new_from_array(spl_token::ID.to_bytes()),
                     swap: self.key,
                     authority: self.authority,
                     user_transfer_authority: *token_transfer_authority,
@@ -171,7 +165,7 @@ impl Amm for ConstantProductAmm {
         })
     }
 
-    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
+    fn clone_amm(&self) -> Box<dyn Amm> {
         Box::new(self.clone())
     }
 }
