@@ -2,13 +2,11 @@ pub mod api_server;
 pub mod args;
 pub mod metrics_server;
 
-use std::collections::HashMap;
-
 use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
     bootstrap::Bootstrap,
-    clients::geyser::GeyserClientWrapped,
+    geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
 };
 use metrics::describe_counter;
@@ -19,10 +17,7 @@ use tokio::signal::unix::{SignalKind, signal};
 use tracing::{debug, error, info};
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
-use yellowstone_grpc_proto::{
-    geyser::{SubscribeRequest, subscribe_update},
-    prelude::SubscribeRequestFilterAccounts,
-};
+use yellowstone_grpc_proto::geyser::subscribe_update;
 
 #[tokio::main]
 async fn main() {
@@ -93,7 +88,7 @@ async fn run(cfg: Cfg) {
 
     let client_http = solana_client::rpc_client::RpcClient::new(cfg.http_url);
     let client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
-    let mut client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
+    let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
         .tls_config(ClientTlsConfig::new().with_native_roots())
         .expect("unable to craft a tls config")
@@ -130,23 +125,23 @@ async fn run(cfg: Cfg) {
                         let account = geyser_acc_to_native(&account_info);
 
                         // Deserialize as PoolState
-                        //match deserialize_anchor_account::<raydium_cp_swap::states::PoolState>(&account) {
-                        //    Ok(pool_state) => {
-                        //        info!("Pool State Update:");
-                        //        info!("  Pubkey: {}", pubkey);
-                        //        info!("  Slot: {}", account_update.slot);
-                        //        info!("  Token 0 Mint: {}", pool_state.token_0_mint);
-                        //        info!("  Token 1 Mint: {}", pool_state.token_1_mint);
-                        //        info!("  Token 0 Vault: {}", pool_state.token_0_vault);
-                        //        info!("  Token 1 Vault: {}", pool_state.token_1_vault);
+                        match deserialize_anchor_account::<raydium_cp_swap::states::PoolState>(&account) {
+                            Ok(pool_state) => {
+                                info!("Pool State Update:");
+                                info!("  Pubkey: {}", pubkey);
+                                info!("  Slot: {}", account_update.slot);
+                                info!("  Token 0 Mint: {}", pool_state.token_0_mint);
+                                info!("  Token 1 Mint: {}", pool_state.token_1_mint);
+                                info!("  Token 0 Vault: {}", pool_state.token_0_vault);
+                                info!("  Token 1 Vault: {}", pool_state.token_1_vault);
 
-                        //        let v = pool_state.lp_supply;
-                        //        info!("  LP Supply: {}", v);
-                        //    }
-                        //    Err(e) => {
-                        //        error!("Failed to deserialize PoolState: {}", e);
-                        //    }
-                        //}
+                                let v = pool_state.lp_supply;
+                                info!("  LP Supply: {}", v);
+                            }
+                            Err(e) => {
+                                error!("Failed to deserialize PoolState: {}", e);
+                            }
+                        }
                     }
                 }
                 Err(e) => {

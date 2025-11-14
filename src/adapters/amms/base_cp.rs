@@ -7,21 +7,28 @@
 use std::convert::TryInto;
 
 use anchor_lang::prelude::Pubkey;
-use anyhow::{Result, ensure};
+//use solana_sdk::pubkey::Pubkey;
+use anyhow::{Context, Result, ensure};
 pub use jupiter_amm_interface::{
     AccountMap, Amm, AmmContext, AmmLabel, AmmProgramIdToLabel, KeyedAccount, KeyedUiAccount, Quote, QuoteParams, Side, SingleProgramAmm, Swap, SwapAndAccountMetas, SwapMode,
-    SwapParams, single_program_amm, try_get_account_data,
+    SwapParams,
 };
 use solana_program::program_pack::Pack;
 use spl_token::state::Account as TokenAccount;
 
+pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> Result<&'a [u8]> {
+    account_map.get(address).map(|account| account.data.as_slice()).with_context(|| format!("Could not find address: {address}"))
+}
+
 use crate::{
-    adapters::helpers::{TokenSwap, get_swap_curve_result, to_dex_account_metas},
+    adapters::{
+        amms::swap_state::SwapV1,
+        helpers::{TokenSwap, get_swap_curve_result, to_dex_account_metas},
+    },
     curves::{
         base::{CurveType, SwapCurve},
         calculator::TradeDirection,
     },
-    state::SwapV1,
 };
 
 pub struct ConstantProductAmm {
@@ -62,15 +69,10 @@ impl Clone for ConstantProductAmm {
 
 impl Amm for ConstantProductAmm {
     fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> Result<Self> {
-        // Skip the first byte which is version
         let state = SwapV1::unpack(&keyed_account.account.data[1..])?;
-
-        // Support only the most common non exotic curves
-        ensure!(matches!(state.swap_curve.curve_type, CurveType::ConstantProduct | CurveType::Stable));
-
         let reserve_mints = [state.token_a_mint, state.token_b_mint];
 
-        // export outside on a per-exchange basis
+        // TODO: export outside on a per-exchange basis
         let label = "..".to_string();
 
         let program_id = keyed_account.account.owner;

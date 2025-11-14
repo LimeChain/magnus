@@ -1,17 +1,13 @@
-use std::convert::TryInto;
-
 use anchor_lang::{
     ToAccountMetas,
     prelude::{AccountMeta, Pubkey},
 };
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result};
 pub use jupiter_amm_interface::{
     AccountMap, Amm, AmmContext, AmmLabel, AmmProgramIdToLabel, KeyedAccount, KeyedUiAccount, Quote, QuoteParams, Side, SingleProgramAmm, Swap, SwapAndAccountMetas, SwapMode,
     SwapParams, single_program_amm, try_get_account_data,
 };
 use rust_decimal::Decimal;
-use solana_program::program_pack::Pack;
-use spl_token::state::Account as TokenAccount;
 
 use crate::curves::{
     base::SwapCurve,

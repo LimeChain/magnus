@@ -8,13 +8,11 @@ use yellowstone_grpc_proto::{
     prelude::SubscribeUpdate,
 };
 
-pub struct GeyserClientWrapped<F: Interceptor> {
-    inner: GeyserGrpcClient<F>,
-}
+pub struct GeyserClientWrapped<F: Interceptor>(GeyserGrpcClient<F>);
 
 impl<F: Interceptor> GeyserClientWrapped<F> {
     pub fn new(inner: GeyserGrpcClient<F>) -> Self {
-        Self { inner }
+        Self(inner)
     }
 
     pub async fn craft_filter(&self, accounts: Vec<String>) -> SubscribeRequest {
@@ -27,7 +25,7 @@ impl<F: Interceptor> GeyserClientWrapped<F> {
     }
 
     pub async fn subscribe(&mut self, sub_request: SubscribeRequest) -> impl Stream<Item = Result<SubscribeUpdate, Status>> {
-        let (_, stream) = self.inner.subscribe_with_request(Some(sub_request)).await.expect("unable to subscribe to geyser");
+        let (_, stream) = self.0.subscribe_with_request(Some(sub_request)).await.expect("unable to subscribe to geyser");
 
         stream
     }
