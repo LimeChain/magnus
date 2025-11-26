@@ -6,19 +6,6 @@ edition = "2024"
 [lib]
 path = "src/lib.rs"
 
-# temporary
-[[bin]]
-name = "solfi_swap"
-path = "scripts/solfi_swap.rs"
-
-[[bin]]
-name = "raydium-clmm_swap"
-path = "scripts/raydium_clmm_swap.rs"
-
-[[bin]]
-name = "raydium-cpmm_swap"
-path = "scripts/raydium_cpamm_swap.rs"
-
 [dependencies]
 actix-web = "4.11.0"
 ahash = "0.8.12"
@@ -74,6 +61,12 @@ spl-math = "0.3.0"
 
 raydium-cp-swap = { git = "https://github.com/raydium-io/raydium-cp-swap", package = "raydium-cp-swap", features = ["no-entrypoint", "client"] }
 raydium-clmm = { git = "https://github.com/raydium-io/raydium-clmm", package = "raydium-amm-v3", features = ["no-entrypoint", "client"] }
+hex = "0.4.3"
+solana-system-transaction = "3.0.0"
+#litesvm = "0.8.2"
+borsh = "1.5.7"
+solana-account = "3.2.0"
+serde_with = "3.16.0"
 
 [dev-dependencies]
 criterion = "0.7.0"

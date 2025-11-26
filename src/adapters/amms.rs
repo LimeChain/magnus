@@ -14,8 +14,12 @@ use crate::adapters::{Adapter, Quote, QuoteParams, SwapAndAccountMetas, SwapPara
 
 pub mod base_cl;
 pub mod base_cp;
+pub mod raydium_cl;
 pub mod raydium_cp;
 pub mod swap_state;
+
+pub use base_cl::BaseConcentratedLiquidityAmm;
+pub use base_cp::ConstantProductAmm;
 
 /// ..
 pub trait Amm: Adapter + Send + Sync {

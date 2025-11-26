@@ -1,3 +1,5 @@
-.surfpool/
+/.surfpool/
 /target/
 /artifacts/
+/runbooks/
+txtx.yml
