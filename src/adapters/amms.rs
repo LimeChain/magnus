@@ -1,4 +1,5 @@
 use std::{
+    boxed::Box,
     collections::{HashMap, HashSet},
     sync::{
         Arc,
@@ -11,12 +12,17 @@ use solana_sdk::{account::Account, clock::Clock, pubkey::Pubkey};
 
 use crate::adapters::{Adapter, Quote, QuoteParams, SwapAndAccountMetas, SwapParams};
 
-pub mod base_clamm;
-pub mod base_cpamm;
-pub mod raydium_cpamm;
+pub mod base_cl;
+pub mod base_cp;
+pub mod raydium_cl;
+pub mod raydium_cp;
+pub mod swap_state;
+
+pub use base_cl::BaseConcentratedLiquidityAmm;
+pub use base_cp::ConstantProductAmm;
 
 /// ..
-pub trait Amm: Adapter {
+pub trait Amm: Adapter + Send + Sync {
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> eyre::Result<Self>
     where
         Self: Sized;
@@ -76,6 +82,8 @@ pub trait Amm: Adapter {
     fn is_active(&self) -> bool {
         true
     }
+
+    fn clone_amm(&self) -> Box<dyn Amm>;
 }
 
 #[derive(Clone, Deserialize, Serialize)]

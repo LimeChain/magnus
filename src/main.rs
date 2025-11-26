@@ -2,13 +2,11 @@ pub mod api_server;
 pub mod args;
 pub mod metrics_server;
 
-use std::collections::HashMap;
-
 use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
     bootstrap::Bootstrap,
-    clients::geyser::GeyserClientWrapped,
+    geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
 };
 use metrics::describe_counter;
@@ -19,10 +17,7 @@ use tokio::signal::unix::{SignalKind, signal};
 use tracing::{debug, error, info};
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
-use yellowstone_grpc_proto::{
-    geyser::{SubscribeRequest, subscribe_update},
-    prelude::SubscribeRequestFilterAccounts,
-};
+use yellowstone_grpc_proto::geyser::subscribe_update;
 
 #[tokio::main]
 async fn main() {
@@ -67,15 +62,15 @@ pub trait State {}
 pub trait PropagateSignal {}
 
 pub trait Ingest {
-    fn spawn<T: State>(state: T) -> eyre::Result<()>;
+    fn ingest<T: State>(state: T) -> eyre::Result<()>;
 }
 
-pub trait Compute {
-    fn spawn<T: State, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
+pub trait Strategy {
+    fn compute<T: State, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
 }
 
-pub trait Propagate {
-    fn spawn<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
+pub trait Payload {
+    fn execute<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
 }
 
 async fn run(cfg: Cfg) {
@@ -93,7 +88,7 @@ async fn run(cfg: Cfg) {
 
     let client_http = solana_client::rpc_client::RpcClient::new(cfg.http_url);
     let client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
-    let mut client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
+    let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
         .tls_config(ClientTlsConfig::new().with_native_roots())
         .expect("unable to craft a tls config")

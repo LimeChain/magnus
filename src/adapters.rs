@@ -7,12 +7,13 @@ use crate::adapters::aggregators::AggregatorKind;
 
 pub mod aggregators;
 pub mod amms;
+pub mod helpers;
 
 /// Defines the base traits for downstream liquidity adapters
 /// Implementations usually rely on a child interface, like [`Amm`] and [`Aggregator`]
 pub trait Adapter {}
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct QuoteParams {
     pub amount: u64,
     pub input_mint: Pubkey,
@@ -59,6 +60,8 @@ pub struct SwapAndAccountMetas {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Swap {
+    Base, // TODO: must be removed
+
     RaydiumCP,
 }
 
