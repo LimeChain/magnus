@@ -23,7 +23,7 @@ pub struct RaydiumCL;
  *
  */
 #[derive(Debug)]
-pub struct SwapV2 {
+pub struct SwapV1 {
     /// The user performing the swap
     pub payer: solana_sdk::pubkey::Pubkey,
     /// The factory state to read protocol fees
@@ -52,7 +52,7 @@ pub struct SwapV2 {
     pub output_vault_mint: solana_sdk::pubkey::Pubkey,
 }
 
-impl SwapV2 {
+impl SwapV1 {
     pub fn instruction(&self, args: SwapV2InstructionArgs) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
@@ -75,7 +75,7 @@ impl SwapV2 {
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.input_vault_mint, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.output_vault_mint, false));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = SwapV2InstructionData::new().try_to_vec().unwrap();
+        let mut data = SwapV1InstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -84,11 +84,11 @@ impl SwapV2 {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct SwapV2InstructionData {
+pub struct SwapV1InstructionData {
     discriminator: [u8; 8],
 }
 
-impl SwapV2InstructionData {
+impl SwapV1InstructionData {
     pub fn new() -> Self {
         Self { discriminator: [43, 4, 237, 11, 26, 201, 30, 98] }
     }
@@ -98,7 +98,7 @@ impl SwapV2InstructionData {
     }
 }
 
-impl Default for SwapV2InstructionData {
+impl Default for SwapV1InstructionData {
     fn default() -> Self {
         Self::new()
     }

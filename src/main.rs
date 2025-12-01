@@ -8,6 +8,7 @@ use magnus::{
     bootstrap::Bootstrap,
     geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
+    ingest::GeyserPoolStateIngestor,
 };
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -58,21 +59,6 @@ pub struct Cfg {
     metrics_server_workers: u16,
 }
 
-pub trait State {}
-pub trait PropagateSignal {}
-
-pub trait Ingest {
-    fn ingest<T: State>(state: T) -> eyre::Result<()>;
-}
-
-pub trait Strategy {
-    fn compute<T: State, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
-}
-
-pub trait Payload {
-    fn execute<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
-}
-
 async fn run(cfg: Cfg) {
     let mut interrupt = signal(SignalKind::interrupt()).expect("Unable to initialise interrupt signal handler");
     let mut terminate = signal(SignalKind::terminate()).expect("Unable to initialise termination signal handler");
@@ -106,50 +92,7 @@ async fn run(cfg: Cfg) {
     let accounts = markets.iter().map(|market| market.pubkey.to_string()).collect::<Vec<_>>();
     debug!("loaded accounts | {:?}", accounts);
 
-    let _ = tokio::spawn(async move {
-        let mut client_geyser = GeyserClientWrapped::new(client_geyser);
-        let filter = client_geyser.craft_filter(accounts).await;
-        let mut stream = client_geyser.subscribe(filter).await;
-
-        while let Some(message) = stream.next().await {
-            match message {
-                Ok(msg) => {
-                    // Handle the SubscribeUpdate
-                    if let Some(update) = msg.update_oneof
-                        && let subscribe_update::UpdateOneof::Account(account_update) = update
-                        && let Some(account_info) = account_update.account
-                    {
-                        let pubkey = Pubkey::try_from(account_info.pubkey.as_slice()).expect("Invalid pubkey");
-
-                        // Convert to solana Account type
-                        let account = geyser_acc_to_native(&account_info);
-
-                        // Deserialize as PoolState
-                        match deserialize_anchor_account::<raydium_cp_swap::states::PoolState>(&account) {
-                            Ok(pool_state) => {
-                                info!("Pool State Update:");
-                                info!("  Pubkey: {}", pubkey);
-                                info!("  Slot: {}", account_update.slot);
-                                info!("  Token 0 Mint: {}", pool_state.token_0_mint);
-                                info!("  Token 1 Mint: {}", pool_state.token_1_mint);
-                                info!("  Token 0 Vault: {}", pool_state.token_0_vault);
-                                info!("  Token 1 Vault: {}", pool_state.token_1_vault);
-
-                                let v = pool_state.lp_supply;
-                                info!("  LP Supply: {}", v);
-                            }
-                            Err(e) => {
-                                error!("Failed to deserialize PoolState: {}", e);
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    error!("Error receiving message: {}", e);
-                }
-            }
-        }
-    });
+    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, accounts).ingest().await });
 
     tokio::spawn(async move {
         api_server::ApiServer::new(api_server::ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers })
