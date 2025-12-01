@@ -5,35 +5,37 @@ use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
 use yellowstone_grpc_proto::geyser::subscribe_update;
 
 use crate::{
-    TransmitState, error,
+    StateTransmitter, TransmitState, error,
     geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
 };
 
 /// ..
-pub trait Ingest {
+#[async_trait::async_trait]
+pub trait Ingest: Send + Sync {
     fn name(&self) -> &str;
 
-    fn ingest<T: TransmitState>(&mut self, state: T) -> eyre::Result<()>;
+    async fn ingest(&mut self, state: StateTransmitter) -> eyre::Result<()>;
 }
 
-pub struct GeyserPoolStateIngestor<T: Interceptor> {
+pub struct GeyserPoolStateIngestor<T: Interceptor + Send + Sync> {
     client_geyser: GeyserClientWrapped<T>,
     accounts: Vec<String>,
 }
 
-impl<T: Interceptor> GeyserPoolStateIngestor<T> {
+impl<T: Interceptor + Send + Sync> GeyserPoolStateIngestor<T> {
     pub fn new(client_geyser: GeyserGrpcClient<T>, accounts: Vec<String>) -> Self {
         Self { client_geyser: GeyserClientWrapped::new(client_geyser), accounts }
     }
 }
 
-impl<T: Interceptor> Ingest for GeyserPoolStateIngestor<T> {
+#[async_trait::async_trait]
+impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
     fn name(&self) -> &str {
         "GeyserPoolStateIngestor"
     }
 
-    async fn ingest(&mut self, state: &T) -> eyre::Result<()> {
+    async fn ingest(&mut self, state: StateTransmitter) -> eyre::Result<()> {
         let filter = self.client_geyser.craft_filter(self.accounts.clone()).await;
         let mut stream = self.client_geyser.subscribe(filter).await;
 

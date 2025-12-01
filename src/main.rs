@@ -2,13 +2,17 @@ pub mod api_server;
 pub mod args;
 pub mod metrics_server;
 
+use std::collections::HashMap;
+
 use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
+    SignalExecutor, StateTransmitter, TransmitState,
     bootstrap::Bootstrap,
     geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
-    ingest::GeyserPoolStateIngestor,
+    ingest::{GeyserPoolStateIngestor, Ingest},
+    solve::{Solve, Strategy},
 };
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -59,6 +63,12 @@ pub struct Cfg {
     metrics_server_workers: u16,
 }
 
+//pub const PROGRAMS: HashMap<Pubkey, String> = HashMap::from([
+//    (Pubkey::from("SoLFiHG9TfgtdUXUjWAxi3LtvYuFyDLVhBWxdMZxyCe"), "SolfiV1".to_string()),
+//    (Pubkey::from("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF"), "SolfiV2".to_string()),
+//    (Pubkey::from("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C"), "RaydiumCP".to_string()),
+//]);
+
 async fn run(cfg: Cfg) {
     let mut interrupt = signal(SignalKind::interrupt()).expect("Unable to initialise interrupt signal handler");
     let mut terminate = signal(SignalKind::terminate()).expect("Unable to initialise termination signal handler");
@@ -95,9 +105,15 @@ async fn run(cfg: Cfg) {
     /* prior spawning the ingestor, we'll need to ensure that the current state is actually fetched
      * through the geyser client
      */
-    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, accounts).ingest().await });
 
-    tokio::spawn(async move {
+    let state_transmitter = StateTransmitter;
+    let signal_executor = SignalExecutor;
+
+    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, accounts).ingest(state_transmitter).await }); // ingest
+    let _ = tokio::spawn(async move { Solve::compute(state_transmitter, signal_executor) }); // strategise
+    let _ = tokio::spawn(async move {}); // execute
+
+    let _ = tokio::spawn(async move {
         api_server::ApiServer::new(api_server::ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers })
             .expect("failed to create server")
             .start()
@@ -105,7 +121,7 @@ async fn run(cfg: Cfg) {
             .expect("failed to start server")
     });
 
-    tokio::spawn(async move {
+    let _ = tokio::spawn(async move {
         metrics_server::MetricsServer::new(metrics_server::MetricsServerCfg { host: cfg.metrics_server_host, workers: cfg.metrics_server_workers, prometheus })
             .expect("failed to create server")
             .start()
@@ -123,6 +139,6 @@ pub fn initialise_prometheus_metrics() {
     describe_counter!("API HITS", "The amount of hits experienced by the API since the server started");
     describe_counter!("API ERRORS", "The amount of errors experienced by the API since the server started");
 
-    describe_counter!("METRICS HITS", "The amount of hits experienced by the /metrics since the (metrics) server started");
+    describe_counter!("METRICS HITS", "The amount of hits experienced by /metrics since the (metrics) server started");
     // ..
 }

@@ -10,7 +10,10 @@ use yellowstone_grpc_proto::{
 
 pub struct GeyserClientWrapped<F: Interceptor>(GeyserGrpcClient<F>);
 
-impl<F: Interceptor> GeyserClientWrapped<F> {
+unsafe impl<F: Interceptor + Send> Send for GeyserClientWrapped<F> {}
+unsafe impl<F: Interceptor + Sync> Sync for GeyserClientWrapped<F> {}
+
+impl<F: Interceptor + Send + Sync> GeyserClientWrapped<F> {
     pub fn new(inner: GeyserGrpcClient<F>) -> Self {
         Self(inner)
     }

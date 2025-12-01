@@ -5,7 +5,6 @@ pub fn parse_amount(s: &str) -> Option<u64> {
     s.parse::<u64>().ok()
 }
 
-// Utility function to deserialize Anchor accounts
 pub fn deserialize_anchor_account<T: AccountDeserialize>(account: &Account) -> eyre::Result<T> {
     let mut data: &[u8] = &account.data;
     T::try_deserialize(&mut data).map_err(Into::into)

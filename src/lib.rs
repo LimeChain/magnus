@@ -11,15 +11,21 @@ pub mod geyser_client;
 pub mod helpers;
 pub mod ingest;
 pub mod propagate;
-// pub mod solve;
+pub mod solve;
 
-pub trait TransmitState {}
-pub trait PropagateSignal {}
-
-pub trait Strategy {
-    fn compute<T: TransmitState, S: PropagateSignal>(state: T, signal: S) -> eyre::Result<()>;
+pub trait TransmitState: Send + Sync {}
+pub trait ExecuteSignal: Send + Sync {}
+pub trait Strategy: Send + Sync {
+    fn compute<T: TransmitState, S: ExecuteSignal>(state: T, signal: S) -> eyre::Result<()>;
+}
+pub trait Payload: Send + Sync {
+    fn execute<T: ExecuteSignal>(signal: T) -> eyre::Result<()>;
 }
 
-pub trait Payload {
-    fn execute<T: PropagateSignal>(signal: T) -> eyre::Result<()>;
-}
+#[derive(Copy, Clone, Debug)]
+pub struct StateTransmitter;
+impl TransmitState for StateTransmitter {}
+
+#[derive(Copy, Clone, Debug)]
+pub struct SignalExecutor;
+impl ExecuteSignal for SignalExecutor {}
