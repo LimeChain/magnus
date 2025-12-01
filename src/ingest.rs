@@ -40,7 +40,6 @@ impl<T: Interceptor> Ingest for GeyserPoolStateIngestor<T> {
         while let Some(message) = stream.next().await {
             match message {
                 Ok(msg) => {
-                    // Handle the SubscribeUpdate
                     if let Some(update) = msg.update_oneof
                         && let subscribe_update::UpdateOneof::Account(account_update) = update
                         && let Some(account_info) = account_update.account

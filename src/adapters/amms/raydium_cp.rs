@@ -1,4 +1,4 @@
-use crate::adapters::amms::BaseConcentratedLiquidityAmm;
+use crate::adapters::amms::BaseConstantProductAmm;
 
 #[derive(Clone, Debug)]
-pub struct RaydiumCP(BaseConcentratedLiquidityAmm);
+pub struct RaydiumCP(BaseConstantProductAmm);

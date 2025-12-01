@@ -17,29 +17,30 @@ pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -
 use crate::{
     adapters::{
         Adapter, Quote, QuoteParams, Swap, SwapAndAccountMetas, SwapParams,
-        amms::{AccountMap, Amm, AmmContext, KeyedAccount, swap_state::SwapV1},
+        amms::{AccountMap, Amm, AmmContext, KeyedAccount, swap_state::ConstantProductSwapV1},
         helpers::{TokenSwap, get_swap_curve_result, to_dex_account_metas},
     },
     curves::{base::SwapCurve, calculator::TradeDirection},
 };
 
-pub struct ConstantProductAmm {
+#[derive(Debug)]
+pub struct BaseConstantProductAmm {
     key: Pubkey,
     authority: Pubkey,
     label: String,
-    state: SwapV1,
+    state: ConstantProductSwapV1,
     reserve_mints: [Pubkey; 2],
     reserves: [u128; 2],
     program_id: Pubkey,
 }
 
-impl Clone for ConstantProductAmm {
+impl Clone for BaseConstantProductAmm {
     fn clone(&self) -> Self {
-        ConstantProductAmm {
+        BaseConstantProductAmm {
             key: self.key,
             authority: self.authority,
             label: self.label.clone(),
-            state: SwapV1 {
+            state: ConstantProductSwapV1 {
                 is_initialized: self.state.is_initialized,
                 bump_seed: self.state.bump_seed,
                 token_program_id: self.state.token_program_id,
@@ -59,11 +60,11 @@ impl Clone for ConstantProductAmm {
     }
 }
 
-impl Adapter for ConstantProductAmm {}
+impl Adapter for BaseConstantProductAmm {}
 
-impl Amm for ConstantProductAmm {
+impl Amm for BaseConstantProductAmm {
     fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> eyre::Result<Self> {
-        let state = SwapV1::unpack(&keyed_account.account.data[1..])?;
+        let state = ConstantProductSwapV1::unpack(&keyed_account.account.data[1..])?;
         let reserve_mints = [state.token_a_mint, state.token_b_mint];
 
         // TODO: export outside on a per-exchange basis

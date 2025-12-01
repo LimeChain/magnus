@@ -19,7 +19,7 @@ pub mod raydium_cp;
 pub mod swap_state;
 
 pub use base_cl::BaseConcentratedLiquidityAmm;
-pub use base_cp::ConstantProductAmm;
+pub use base_cp::BaseConstantProductAmm;
 
 /// ..
 pub trait Amm: Adapter + Send + Sync {

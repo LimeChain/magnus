@@ -92,6 +92,9 @@ async fn run(cfg: Cfg) {
     let accounts = markets.iter().map(|market| market.pubkey.to_string()).collect::<Vec<_>>();
     debug!("loaded accounts | {:?}", accounts);
 
+    /* prior spawning the ingestor, we'll need to ensure that the current state is actually fetched
+     * through the geyser client
+     */
     let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, accounts).ingest().await });
 
     tokio::spawn(async move {
