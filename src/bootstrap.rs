@@ -18,8 +18,9 @@ impl Bootstrap {
         markets.into_iter().map(Market::try_from).collect()
     }
 
-    pub fn transform_market_to_owner(markets: &Vec<Market>) -> HashMap<Pubkey, Market> {
-        markets.iter().map(|market| (market.owner, market.clone())).collect()
+    /// acquire all the programs for whom we're following one or more markets.
+    pub fn transform_market_to_owner(markets: &Vec<Market>) -> Vec<Pubkey> {
+        markets.iter().map(|market| market.owner).collect()
     }
 
     pub fn transform_market_to_dex(markets: &Vec<Market>) -> HashMap<Pubkey, Market> {

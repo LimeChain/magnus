@@ -14,10 +14,25 @@ use solana_sdk::{
 };
 use tracing::info;
 
-const PROGRAM_ID: Pubkey = pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
+use crate::adapters::{
+    Adapter,
+    amms::{Amm, RAYDIUM_CL},
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RaydiumCL;
+
+impl Adapter for RaydiumCL {}
+
+impl Amm for RaydiumCL {
+    fn program_id(&self) -> Pubkey {
+        RAYDIUM_CL
+    }
+
+    fn label(&self) -> String {
+        "RaydiumConcentratedLiquidity".to_string()
+    }
+}
 
 /*
  *
@@ -79,7 +94,7 @@ impl SwapV1 {
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
-        solana_instruction::Instruction { program_id: PROGRAM_ID, accounts, data }
+        solana_instruction::Instruction { program_id: RAYDIUM_CL, accounts, data }
     }
 }
 

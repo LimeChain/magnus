@@ -12,12 +12,13 @@ use magnus::{
     geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
     ingest::{GeyserPoolStateIngestor, Ingest},
-    solve::{Solve, Strategy},
+    payload::{Payload, SendTx},
+    solve::{Solver, Strategy},
 };
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use secrecy::ExposeSecret;
-use solana_sdk::pubkey::Pubkey;
+use solana_sdk::{pubkey, pubkey::Pubkey};
 use tokio::signal::unix::{SignalKind, signal};
 use tracing::{debug, error, info};
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
@@ -63,11 +64,17 @@ pub struct Cfg {
     metrics_server_workers: u16,
 }
 
-//pub const PROGRAMS: HashMap<Pubkey, String> = HashMap::from([
-//    (Pubkey::from("SoLFiHG9TfgtdUXUjWAxi3LtvYuFyDLVhBWxdMZxyCe"), "SolfiV1".to_string()),
-//    (Pubkey::from("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF"), "SolfiV2".to_string()),
-//    (Pubkey::from("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C"), "RaydiumCP".to_string()),
-//]);
+// ingestor, solver, sendtx
+async fn run_core_components() {}
+
+// put all optional components behind feature flags
+async fn run_components() {
+    run_core_components().await;
+
+    // api
+
+    // metrics server
+}
 
 async fn run(cfg: Cfg) {
     let mut interrupt = signal(SignalKind::interrupt()).expect("Unable to initialise interrupt signal handler");
@@ -95,12 +102,14 @@ async fn run(cfg: Cfg) {
         .await
         .expect("unable to connect");
 
-    let markets = match &cfg.bootstrap_file {
+    let markets_raw = match &cfg.bootstrap_file {
         Some(file) => Bootstrap::ingest_from_file(file).expect("unable to ingest from file"),
         None => Bootstrap::ingest_from_jupiter().await.expect("unable to ingest from jupiter"),
     };
-    let accounts = markets.iter().map(|market| market.pubkey.to_string()).collect::<Vec<_>>();
-    debug!("loaded accounts | {:?}", accounts);
+
+    let programs = Bootstrap::transform_market_to_owner(&markets_raw.clone());
+    let markets = Bootstrap::transform_market_to_dex(&markets_raw.clone());
+    info!("{:#?}", markets);
 
     /* prior spawning the ingestor, we'll need to ensure that the current state is actually fetched
      * through the geyser client
@@ -109,9 +118,9 @@ async fn run(cfg: Cfg) {
     let state_transmitter = StateTransmitter;
     let signal_executor = SignalExecutor;
 
-    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, accounts).ingest(state_transmitter).await }); // ingest
-    let _ = tokio::spawn(async move { Solve::compute(state_transmitter, signal_executor) }); // strategise
-    let _ = tokio::spawn(async move {}); // execute
+    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, markets).ingest(state_transmitter).await });
+    let _ = tokio::spawn(async move { Solver::compute(state_transmitter, signal_executor) });
+    let _ = tokio::spawn(async move { SendTx::execute(signal_executor) });
 
     let _ = tokio::spawn(async move {
         api_server::ApiServer::new(api_server::ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers })

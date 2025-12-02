@@ -1,7 +1,8 @@
 use crate::{ExecuteSignal, TransmitState};
 
-pub trait Strategy {
-    fn compute<T: TransmitState, S: ExecuteSignal>(state: T, signal: S) -> eyre::Result<()>;
+#[async_trait::async_trait]
+pub trait Strategy: Send + Sync {
+    async fn compute<T: TransmitState, S: ExecuteSignal>(state: T, signal: S) -> eyre::Result<()>;
 }
 
 #[derive(Clone, Debug)]
@@ -9,10 +10,18 @@ pub enum StrategyKind {
     FCFS,
 }
 
-pub struct Solve;
+#[derive(Clone, Debug)]
+pub struct Solver;
 
-impl Strategy for Solve {
-    fn compute<T: TransmitState, S: ExecuteSignal>(state: T, signal: S) -> eyre::Result<()> {
-        Ok(())
+impl Solver {
+    pub fn new() -> Self {
+        Solver {}
+    }
+}
+
+#[async_trait::async_trait]
+impl Strategy for Solver {
+    async fn compute<T: TransmitState, S: ExecuteSignal>(state: T, signal: S) -> eyre::Result<()> {
+        unimplemented!()
     }
 }
