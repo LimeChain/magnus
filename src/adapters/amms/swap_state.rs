@@ -49,7 +49,7 @@ pub trait SwapState {
 /// All versions of SwapState
 #[enum_dispatch(SwapState)]
 pub enum SwapVersion {
-    SwapV1,
+    ConstantProductSwapV1,
 }
 
 /// SwapVersion does not implement program_pack::Pack because there are size
@@ -57,16 +57,16 @@ pub enum SwapVersion {
 /// special implementations are provided here
 impl SwapVersion {
     /// Size of the latest version of the SwapState
-    pub const LATEST_LEN: usize = 1 + SwapV1::LEN;
+    pub const LATEST_LEN: usize = 1 + ConstantProductSwapV1::LEN;
 
     // add one for the version enum
 
     /// Pack a swap into a byte array, based on its version
     pub fn pack(src: Self, dst: &mut [u8]) -> Result<(), ProgramError> {
         match src {
-            Self::SwapV1(swap_info) => {
+            Self::ConstantProductSwapV1(swap_info) => {
                 dst[0] = 1;
-                SwapV1::pack(swap_info, &mut dst[1..])
+                ConstantProductSwapV1::pack(swap_info, &mut dst[1..])
             }
         }
     }
@@ -76,7 +76,7 @@ impl SwapVersion {
     pub fn unpack(input: &[u8]) -> Result<Arc<dyn SwapState>, ProgramError> {
         let (&version, rest) = input.split_first().ok_or(ProgramError::InvalidAccountData)?;
         match version {
-            1 => Ok(Arc::new(SwapV1::unpack(rest)?)),
+            1 => Ok(Arc::new(ConstantProductSwapV1::unpack(rest)?)),
             _ => Err(ProgramError::UninitializedAccount),
         }
     }
@@ -92,7 +92,7 @@ impl SwapVersion {
 }
 
 #[derive(Debug, Default, PartialEq)]
-pub struct SwapV1 {
+pub struct ConstantProductSwapV1 {
     /// Initialized state.
     pub is_initialized: bool,
     /// Bump seed used in program address.
@@ -130,7 +130,7 @@ pub struct SwapV1 {
     pub swap_curve: SwapCurve,
 }
 
-impl SwapState for SwapV1 {
+impl SwapState for ConstantProductSwapV1 {
     fn is_initialized(&self) -> bool {
         self.is_initialized
     }
@@ -199,14 +199,14 @@ impl SwapState for SwapV1 {
     }
 }
 
-impl Sealed for SwapV1 {}
-impl IsInitialized for SwapV1 {
+impl Sealed for ConstantProductSwapV1 {}
+impl IsInitialized for ConstantProductSwapV1 {
     fn is_initialized(&self) -> bool {
         self.is_initialized
     }
 }
 
-impl Pack for SwapV1 {
+impl Pack for ConstantProductSwapV1 {
     const LEN: usize = 323;
 
     fn pack_into_slice(&self, output: &mut [u8]) {
@@ -288,7 +288,7 @@ mod tests {
         let curve_type = TEST_CURVE_TYPE.try_into().unwrap();
         let calculator = Arc::new(TEST_CURVE);
         let swap_curve = SwapCurve { curve_type, calculator };
-        let swap_info = SwapVersion::SwapV1(SwapV1 {
+        let swap_info = SwapVersion::ConstantProductSwapV1(ConstantProductSwapV1 {
             is_initialized: true,
             bump_seed: TEST_BUMP_SEED,
             token_program_id: TEST_TOKEN_PROGRAM_ID,
@@ -324,7 +324,7 @@ mod tests {
         let curve_type = TEST_CURVE_TYPE.try_into().unwrap();
         let calculator = Arc::new(TEST_CURVE);
         let swap_curve = SwapCurve { curve_type, calculator };
-        let swap_info = SwapV1 {
+        let swap_info = ConstantProductSwapV1 {
             is_initialized: true,
             bump_seed: TEST_BUMP_SEED,
             token_program_id: TEST_TOKEN_PROGRAM_ID,
@@ -338,9 +338,9 @@ mod tests {
             swap_curve,
         };
 
-        let mut packed = [0u8; SwapV1::LEN];
-        SwapV1::pack_into_slice(&swap_info, &mut packed);
-        let unpacked = SwapV1::unpack(&packed).unwrap();
+        let mut packed = [0u8; ConstantProductSwapV1::LEN];
+        ConstantProductSwapV1::pack_into_slice(&swap_info, &mut packed);
+        let unpacked = ConstantProductSwapV1::unpack(&packed).unwrap();
         assert_eq!(swap_info, unpacked);
 
         let mut packed = vec![1u8, TEST_BUMP_SEED];
@@ -362,14 +362,14 @@ mod tests {
         packed.push(TEST_CURVE_TYPE);
         packed.extend_from_slice(&TEST_TOKEN_B_OFFSET.to_le_bytes());
         packed.extend_from_slice(&[0u8; 24]);
-        let unpacked = SwapV1::unpack(&packed).unwrap();
+        let unpacked = ConstantProductSwapV1::unpack(&packed).unwrap();
         assert_eq!(swap_info, unpacked);
 
-        let packed = [0u8; SwapV1::LEN];
-        let swap_info: SwapV1 = Default::default();
-        let unpack_unchecked = SwapV1::unpack_unchecked(&packed).unwrap();
+        let packed = [0u8; ConstantProductSwapV1::LEN];
+        let swap_info: ConstantProductSwapV1 = Default::default();
+        let unpack_unchecked = ConstantProductSwapV1::unpack_unchecked(&packed).unwrap();
         assert_eq!(unpack_unchecked, swap_info);
-        let err = SwapV1::unpack(&packed).unwrap_err();
+        let err = ConstantProductSwapV1::unpack(&packed).unwrap_err();
         assert_eq!(err, ProgramError::UninitializedAccount);
     }
 }

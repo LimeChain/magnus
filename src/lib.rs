@@ -10,5 +10,16 @@ pub mod error;
 pub mod geyser_client;
 pub mod helpers;
 pub mod ingest;
-pub mod propagate;
-// pub mod solve;
+pub mod payload;
+pub mod solve;
+
+pub trait TransmitState: Send + Sync {}
+pub trait ExecuteSignal: Send + Sync {}
+
+#[derive(Copy, Clone, Debug)]
+pub struct StateTransmitter;
+impl TransmitState for StateTransmitter {}
+
+#[derive(Copy, Clone, Debug)]
+pub struct SignalExecutor;
+impl ExecuteSignal for SignalExecutor {}

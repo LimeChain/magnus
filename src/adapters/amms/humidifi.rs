@@ -1,26 +1,27 @@
-use solana_sdk::pubkey::Pubkey;
-
 use crate::adapters::{
     Adapter,
-    amms::{Amm, BaseConstantProductAmm, RAYDIUM_CP},
+    amms::{Amm, HUMIDIFI},
 };
 
-#[derive(Clone, Debug)]
-pub struct RaydiumCP(BaseConstantProductAmm);
+/*
+ * Few things that might be more opaque here:
+ *
+ * Since we cannot directly deserialize into some structure (there's no clue how
+ * humidifi, or any other prop AMM for that matter, keeps track of its state),
+ * we'll simulate the `quote` and `swap` expected by the `Amm` trait through
+ * a virtual env established through litesvm.
+ */
+pub struct Humidifi;
 
-impl Adapter for RaydiumCP {}
+impl Adapter for Humidifi {}
 
-impl Amm for RaydiumCP {
-    fn program_id(&self) -> Pubkey {
-        RAYDIUM_CP
+impl Amm for Humidifi {
+    fn program_id(&self) -> solana_sdk::pubkey::Pubkey {
+        HUMIDIFI
     }
 
     fn label(&self) -> String {
-        "RaydiumConstantProduct".to_string()
-    }
-
-    fn get_accounts_len(&self) -> usize {
-        11
+        "HumidiFi".to_string()
     }
 
     fn key(&self) -> solana_sdk::pubkey::Pubkey {

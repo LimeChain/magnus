@@ -14,16 +14,66 @@ use solana_sdk::{
 };
 use tracing::info;
 
-const PROGRAM_ID: Pubkey = pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
+use crate::adapters::{
+    Adapter,
+    amms::{Amm, RAYDIUM_CL},
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RaydiumCL;
+
+impl Adapter for RaydiumCL {}
+
+impl Amm for RaydiumCL {
+    fn program_id(&self) -> Pubkey {
+        RAYDIUM_CL
+    }
+
+    fn label(&self) -> String {
+        "RaydiumConcentratedLiquidity".to_string()
+    }
+
+    fn key(&self) -> solana_sdk::pubkey::Pubkey {
+        unimplemented!()
+    }
+
+    fn get_reserve_mints(&self) -> Vec<solana_sdk::pubkey::Pubkey> {
+        unimplemented!()
+    }
+
+    fn get_accounts_to_update(&self) -> Vec<solana_sdk::pubkey::Pubkey> {
+        unimplemented!()
+    }
+
+    fn update(&mut self, account_map: &super::AccountMap) -> eyre::Result<()> {
+        unimplemented!()
+    }
+
+    fn quote(&self, quote_params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::Quote> {
+        unimplemented!()
+    }
+
+    fn get_swap_and_account_metas(&self, swap_params: &crate::adapters::SwapParams) -> eyre::Result<crate::adapters::SwapAndAccountMetas> {
+        unimplemented!()
+    }
+
+    fn from_keyed_account(keyed_account: &super::KeyedAccount, amm_context: &super::AmmContext) -> eyre::Result<Self>
+    where
+        Self: Sized,
+    {
+        unimplemented!()
+    }
+
+    fn clone_amm(&self) -> Box<dyn Amm> {
+        unimplemented!()
+    }
+}
 
 /*
  *
  */
 #[derive(Debug)]
-pub struct SwapV2 {
+pub struct SwapV1 {
     /// The user performing the swap
     pub payer: solana_sdk::pubkey::Pubkey,
     /// The factory state to read protocol fees
@@ -52,7 +102,7 @@ pub struct SwapV2 {
     pub output_vault_mint: solana_sdk::pubkey::Pubkey,
 }
 
-impl SwapV2 {
+impl SwapV1 {
     pub fn instruction(&self, args: SwapV2InstructionArgs) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
@@ -75,20 +125,20 @@ impl SwapV2 {
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.input_vault_mint, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.output_vault_mint, false));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = SwapV2InstructionData::new().try_to_vec().unwrap();
+        let mut data = SwapV1InstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
-        solana_instruction::Instruction { program_id: PROGRAM_ID, accounts, data }
+        solana_instruction::Instruction { program_id: RAYDIUM_CL, accounts, data }
     }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct SwapV2InstructionData {
+pub struct SwapV1InstructionData {
     discriminator: [u8; 8],
 }
 
-impl SwapV2InstructionData {
+impl SwapV1InstructionData {
     pub fn new() -> Self {
         Self { discriminator: [43, 4, 237, 11, 26, 201, 30, 98] }
     }
@@ -98,7 +148,7 @@ impl SwapV2InstructionData {
     }
 }
 
-impl Default for SwapV2InstructionData {
+impl Default for SwapV1InstructionData {
     fn default() -> Self {
         Self::new()
     }
