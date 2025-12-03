@@ -6,6 +6,13 @@ edition = "2024"
 [lib]
 path = "src/lib.rs"
 
+[[bin]]
+name = "magnus"
+path = "src/main.rs"
+
+[features]
+metrics = ["dep:metrics", "metrics-exporter-prometheus"]
+
 [dependencies]
 actix-web = "4.11.0"
 ahash = "0.8.12"
@@ -22,8 +29,8 @@ eyre = "0.6.12"
 futures = "0.3.31"
 futures-util = "0.3.31"
 jupiter-amm-interface = "0.6.0"
-metrics = "0.24.2"
-metrics-exporter-prometheus = "0.17.2"
+metrics = { version = "0.24.2", optional = true }
+metrics-exporter-prometheus = { version = "0.17.2", optional = true }
 num_cpus = "1.17.0"
 
 reqwest = { version = "0.12.24" }

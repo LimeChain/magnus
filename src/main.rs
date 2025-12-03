@@ -130,6 +130,7 @@ async fn run(cfg: Cfg) {
             .expect("failed to start server")
     });
 
+    #[cfg(feature = "metrics")]
     let _ = tokio::spawn(async move {
         metrics_server::MetricsServer::new(metrics_server::MetricsServerCfg { host: cfg.metrics_server_host, workers: cfg.metrics_server_workers, prometheus })
             .expect("failed to create server")

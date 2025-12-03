@@ -1,4 +1,5 @@
 .surfpool/
+.zed/
 target/
 runbooks/
 idls/
