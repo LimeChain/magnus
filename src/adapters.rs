@@ -63,6 +63,8 @@ pub enum Swap {
     Base, // TODO: must be removed
 
     RaydiumCP,
+
+    ObricV2,
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema)]

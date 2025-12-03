@@ -15,6 +15,7 @@ use crate::adapters::{Adapter, Quote, QuoteParams, SwapAndAccountMetas, SwapPara
 pub mod base_cl;
 pub mod base_cp;
 pub mod humidifi;
+pub mod obric_v2;
 pub mod raydium_cl;
 pub mod raydium_cp;
 pub mod swap_state;
@@ -22,21 +23,25 @@ pub mod swap_state;
 pub use base_cl::BaseConcentratedLiquidityAmm;
 pub use base_cp::BaseConstantProductAmm;
 
+pub const SPL_TOKEN_PROGRAM_ID: Pubkey = pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+
 pub const SOLFI_V1: Pubkey = pubkey!("SoLFiHG9TfgtdUXUjWAxi3LtvYuFyDLVhBWxdMZxyCe");
 pub const SOLFI_V2: Pubkey = pubkey!("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF");
 pub const RAYDIUM_CP: Pubkey = pubkey!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C");
 pub const RAYDIUM_CL: Pubkey = pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
 pub const HUMIDIFI: Pubkey = pubkey!("9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp");
+pub const OBRIC_V2: Pubkey = pubkey!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
 
 /// ..
 pub trait Amm: Adapter + Send + Sync {
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> eyre::Result<Self>
     where
         Self: Sized;
-    fn label(&self) -> String;
 
+    fn label(&self) -> String;
     fn program_id(&self) -> Pubkey;
     fn key(&self) -> Pubkey;
+    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync>;
     fn get_reserve_mints(&self) -> Vec<Pubkey>;
     fn get_accounts_to_update(&self) -> Vec<Pubkey>;
     fn update(&mut self, account_map: &AccountMap) -> eyre::Result<()>;
@@ -89,8 +94,6 @@ pub trait Amm: Adapter + Send + Sync {
     fn is_active(&self) -> bool {
         true
     }
-
-    fn clone_amm(&self) -> Box<dyn Amm>;
 }
 
 #[derive(Clone, Deserialize, Serialize)]

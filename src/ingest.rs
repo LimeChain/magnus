@@ -9,7 +9,7 @@ use yellowstone_grpc_proto::geyser::subscribe_update;
 
 use crate::{
     StateTransmitter, TransmitState,
-    adapters::amms::{RAYDIUM_CL, RAYDIUM_CP, SOLFI_V1, SOLFI_V2},
+    adapters::amms::{OBRIC_V2, RAYDIUM_CL, RAYDIUM_CP, SOLFI_V1, SOLFI_V2},
     bootstrap::Market,
     error,
     geyser_client::GeyserClientWrapped,
@@ -73,6 +73,9 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
                             }
                             SOLFI_V2 => {
                                 info!("SOLFI_V2 | {:?} | {:?}", pubkey, account);
+                            }
+                            OBRIC_V2 => {
+                                info!("OBRIC_V2 | {:?} | {:?}", pubkey, account);
                             }
                             RAYDIUM_CP => {
                                 info!("RAYDIUM_CP | {:?} | {:?}", pubkey, account);

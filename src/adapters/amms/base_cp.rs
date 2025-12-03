@@ -166,7 +166,7 @@ impl Amm for BaseConstantProductAmm {
         })
     }
 
-    fn clone_amm(&self) -> Box<dyn Amm> {
+    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
         Box::new(self.clone())
     }
 }

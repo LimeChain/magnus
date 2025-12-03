@@ -55,7 +55,7 @@ impl Amm for Humidifi {
         unimplemented!()
     }
 
-    fn clone_amm(&self) -> Box<dyn Amm> {
+    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
         unimplemented!()
     }
 }
