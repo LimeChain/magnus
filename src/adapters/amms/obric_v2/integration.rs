@@ -36,7 +36,7 @@ impl Amm for ObricV2Amm {
     }
 
     fn label(&self) -> String {
-        return String::from("Obric V2");
+        "Obric V2".to_string()
     }
 
     fn get_accounts_len(&self) -> usize {

@@ -24,6 +24,10 @@ impl Amm for Humidifi {
         "HumidiFi".to_string()
     }
 
+    fn get_accounts_len(&self) -> usize {
+        11
+    }
+
     fn key(&self) -> solana_sdk::pubkey::Pubkey {
         unimplemented!()
     }

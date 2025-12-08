@@ -10,10 +10,6 @@ use solana_program::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use spl_token::state::Account as TokenAccount;
 
-pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> eyre::Result<&'a [u8]> {
-    account_map.get(address).map(|account| account.data.as_slice()).ok_or_else(|| eyre::eyre!("Could not find address: {address}"))
-}
-
 use crate::{
     adapters::{
         Adapter, Quote, QuoteParams, Swap, SwapAndAccountMetas, SwapParams,
@@ -23,15 +19,19 @@ use crate::{
     curves::{base::SwapCurve, calculator::TradeDirection},
 };
 
-#[derive(Debug)]
+pub fn try_get_account_data<'a>(account_map: &'a AccountMap, address: &Pubkey) -> eyre::Result<&'a [u8]> {
+    account_map.get(address).map(|account| account.data.as_slice()).ok_or_else(|| eyre::eyre!("Could not find address: {address}"))
+}
+
+#[derive(Debug, Default)]
 pub struct BaseConstantProductAmm {
-    key: Pubkey,
-    authority: Pubkey,
-    label: String,
-    state: ConstantProductSwapV1,
-    reserve_mints: [Pubkey; 2],
-    reserves: [u128; 2],
-    program_id: Pubkey,
+    pub key: Pubkey,
+    pub authority: Pubkey,
+    pub label: String,
+    pub state: ConstantProductSwapV1,
+    pub reserve_mints: [Pubkey; 2],
+    pub reserves: [u128; 2],
+    pub program_id: Pubkey,
 }
 
 impl Clone for BaseConstantProductAmm {
@@ -63,25 +63,6 @@ impl Clone for BaseConstantProductAmm {
 impl Adapter for BaseConstantProductAmm {}
 
 impl Amm for BaseConstantProductAmm {
-    fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> eyre::Result<Self> {
-        let state = ConstantProductSwapV1::unpack(&keyed_account.account.data[1..])?;
-        let reserve_mints = [state.token_a_mint, state.token_b_mint];
-
-        // TODO: export outside on a per-exchange basis
-        let label = "..".to_string();
-
-        let program_id = keyed_account.account.owner;
-        Ok(Self {
-            key: keyed_account.key,
-            authority: Pubkey::find_program_address(&[&keyed_account.key.to_bytes()], &program_id).0,
-            label,
-            state,
-            reserve_mints,
-            program_id,
-            reserves: Default::default(),
-        })
-    }
-
     fn label(&self) -> String {
         self.label.clone()
     }
@@ -94,12 +75,39 @@ impl Amm for BaseConstantProductAmm {
         self.key
     }
 
+    fn get_accounts_len(&self) -> usize {
+        11
+    }
+
     fn get_reserve_mints(&self) -> Vec<Pubkey> {
         self.reserve_mints.to_vec()
     }
 
     fn get_accounts_to_update(&self) -> Vec<Pubkey> {
         vec![self.state.token_a, self.state.token_b]
+    }
+
+    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
+        Box::new(self.clone())
+    }
+
+    fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> eyre::Result<Self> {
+        let state = ConstantProductSwapV1::unpack(&keyed_account.account.data[1..])?;
+        let reserve_mints = [state.token_a_mint, state.token_b_mint];
+
+        // TODO: export outside on a per-exchange basis
+        let label = String::default();
+
+        let program_id = keyed_account.account.owner;
+        Ok(Self {
+            key: keyed_account.key,
+            authority: Pubkey::find_program_address(&[&keyed_account.key.to_bytes()], &program_id).0,
+            label,
+            state,
+            reserve_mints,
+            program_id,
+            reserves: Default::default(),
+        })
     }
 
     fn update(&mut self, account_map: &AccountMap) -> eyre::Result<()> {
@@ -132,10 +140,6 @@ impl Amm for BaseConstantProductAmm {
         })
     }
 
-    fn get_accounts_len(&self) -> usize {
-        11
-    }
-
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> eyre::Result<SwapAndAccountMetas> {
         let SwapParams { source_mint, destination_token_account, source_token_account, token_transfer_authority, .. } = swap_params;
 
@@ -164,9 +168,5 @@ impl Amm for BaseConstantProductAmm {
                 },
             ),
         })
-    }
-
-    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
-        Box::new(self.clone())
     }
 }
