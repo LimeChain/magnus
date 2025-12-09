@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
 use utoipa::ToSchema;
 
-use crate::adapters::{aggregators::AggregatorKind, amms::Side};
+use crate::{SrcKind, adapters::amms::Side};
 
 pub mod aggregators;
 pub mod amms;
@@ -13,14 +13,6 @@ pub mod helpers;
 /// Implementations usually rely on a child interface, like [`Amm`] and [`Aggregator`]
 pub trait Adapter {}
 
-#[derive(Copy, Clone, Debug)]
-pub struct QuoteParams {
-    pub amount: u64,
-    pub input_mint: Pubkey,
-    pub output_mint: Pubkey,
-    pub swap_mode: SwapMode,
-}
-
 #[derive(Serialize, Deserialize, PartialEq, Clone, Copy, Default, Debug)]
 pub enum SwapMode {
     #[default]
@@ -28,19 +20,24 @@ pub enum SwapMode {
     ExactOut,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct QuoteParams {
+    pub swap_mode: SwapMode,
+    pub amount: u64,
+    pub input_mint: Pubkey,
+    pub output_mint: Pubkey,
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct SwapParams {
     pub swap_mode: SwapMode,
-    pub in_amount: u64,
-    pub out_amount: u64,
-    pub source_mint: Pubkey,
-    pub destination_mint: Pubkey,
+    pub amount: u64,
+    pub input_mint: Pubkey,
+    pub output_mint: Pubkey,
     pub source_token_account: Pubkey,
     pub destination_token_account: Pubkey,
     /// This can be the user or the program authority over the source_token_account.
     pub token_transfer_authority: Pubkey,
-    /// Instead of returning the relevant Err, replace dynamic accounts with the default Pubkey
-    /// This is useful for crawling market with no tick array
-    pub missing_dynamic_accounts_as_default: bool,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -52,35 +49,37 @@ pub struct Quote {
     pub fee_pct: Decimal,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct SwapAndAccountMetas {
-    pub swap: Swap,
+    pub swap: AmmSwap,
     pub account_metas: Vec<AccountMeta>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum Swap {
-    Base, // TODO: must be removed
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum AmmSwap {
+    #[default]
     RaydiumCP,
     ObricV2,
-    OpenbookV2 { side: Side },
+    OpenbookV2 {
+        side: Side,
+    },
 }
 
-#[derive(Clone, Debug, Serialize, ToSchema)]
+#[derive(Clone, Debug, Default, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct QuoteResponse {
-    pub aggregator: AggregatorKind,
+pub struct QuoteAndSwapResponse {
+    pub source: SrcKind,
     pub input_mint: String,
     pub output_mint: String,
     pub in_amount: u64,
     pub out_amount: u64,
-    pub route_plan: Option<Vec<QuotePlanItem>>,
+    pub route_plan: Option<Vec<PlanItem>>,
 }
 
 // -- internal
-#[derive(Clone, Debug, Serialize, ToSchema)]
+#[derive(Clone, Debug, Default, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct QuotePlanItem {
+pub struct PlanItem {
     pub venue: String,
     pub market_key: String,
     pub input_mint: String,

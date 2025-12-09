@@ -54,7 +54,7 @@ impl Bootstrap {
 
     /// Initialises the corresponding markets based on the provided programs
     pub async fn init_markets(program_markets: Programs) -> eyre::Result<Markets> {
-        Ok(program_markets
+        let ir: HashMap<Pubkey, Box<dyn Amm>> = program_markets
             .iter()
             .flat_map(|(program, markets)| {
                 markets.iter().map(move |market| {
@@ -63,16 +63,18 @@ impl Bootstrap {
                         &RAYDIUM_CP => Box::new(RaydiumCP::new()),
                         _ => unimplemented!("Market provided ({}) for an unsupported program ({})", market, program),
                     };
-                    (*market, Arc::new(Mutex::new(amm)))
+                    (*market, amm)
                 })
             })
-            .collect())
+            .collect();
+
+        Ok(Arc::new(Mutex::new(ir)))
     }
 
     /// https://www.helius.dev/docs/rpc/guides/getmultipleaccounts#response-structure
     /// Each account in the vec responds to the same index of the markets_addrs vec.
     pub async fn acquire_account_map(client: &RpcClient, markets: &Markets) -> eyre::Result<AccountMap> {
-        let markets_addrs: Vec<Pubkey> = markets.keys().cloned().collect();
+        let markets_addrs: Vec<Pubkey> = markets.lock().unwrap().keys().cloned().collect();
         let account_map = client.get_multiple_accounts(&markets_addrs).await?;
         let mut z = AccountMap::new();
         let mut counter = 0;

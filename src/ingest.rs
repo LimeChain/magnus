@@ -29,17 +29,31 @@ pub trait Ingest: Send + Sync {
     async fn ingest(&mut self, state: StateTransmitter) -> eyre::Result<()>;
 }
 
+pub struct IngestorCfg<T: Interceptor + Send + Sync> {
+    pub client_geyser: GeyserGrpcClient<T>,
+    pub client_default: std::sync::Arc<RpcClient>,
+    pub program_markets: Programs,
+    pub markets: Markets,
+    pub account_map: AccountMap,
+}
+
 pub struct GeyserPoolStateIngestor<T: Interceptor + Send + Sync> {
     client_geyser: GeyserClientWrapped<T>,
-    client_default: RpcClient,
+    client_default: std::sync::Arc<RpcClient>,
     program_markets: Programs,
     markets: Markets,
     account_map: AccountMap,
 }
 
 impl<T: Interceptor + Send + Sync> GeyserPoolStateIngestor<T> {
-    pub fn new(client_geyser: GeyserGrpcClient<T>, client_default: RpcClient, program_markets: Programs, markets: Markets, account_map: AccountMap) -> Self {
-        Self { client_geyser: GeyserClientWrapped::new(client_geyser), client_default, program_markets, markets, account_map }
+    pub fn new(cfg: IngestorCfg<T>) -> Self {
+        Self {
+            client_geyser: GeyserClientWrapped::new(cfg.client_geyser),
+            client_default: cfg.client_default,
+            program_markets: cfg.program_markets,
+            markets: cfg.markets,
+            account_map: cfg.account_map,
+        }
     }
 }
 

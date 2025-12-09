@@ -2,14 +2,17 @@ pub mod api_server;
 pub mod args;
 pub mod metrics_server;
 
+use std::sync::mpsc;
+
 use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
     SignalExecutor, StateTransmitter,
+    adapters::{QuoteAndSwapResponse, QuoteParams, SwapAndAccountMetas},
     bootstrap::{Bootstrap, MarketRaw},
-    ingest::{GeyserPoolStateIngestor, Ingest},
-    payload::{Payload, SendTx},
-    solve::{Solver, Strategy},
+    ingest::{GeyserPoolStateIngestor, Ingest, IngestorCfg},
+    payload::{BaseExecutor, BaseExecutorCfg, Executor},
+    solve::{DispatchParams, DispatchResponse, Solver, SolverCfg, Strategy},
 };
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -19,6 +22,8 @@ use tokio::signal::unix::{SignalKind, signal};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
+
+use crate::api_server::ApiServerCfg;
 
 #[tokio::main]
 async fn main() {
@@ -91,7 +96,7 @@ async fn run(cfg: Cfg) {
      * |3| Implement a proper routing engine based on some defined constraints
      */
 
-    let client_http = solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url);
+    let client_http = std::sync::Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url));
     let client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
     let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
@@ -123,17 +128,36 @@ async fn run(cfg: Cfg) {
     let state_transmitter = StateTransmitter;
     let signal_executor = SignalExecutor;
 
-    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, client_http, program_markets, markets, account_map).ingest(state_transmitter).await });
-    let _ = tokio::spawn(async move { Solver::compute(state_transmitter, signal_executor).await });
-    let _ = tokio::spawn(async move { SendTx::execute(signal_executor).await });
+    /*
+     * - The API server sends a signal to the solver once we need a quote and/or swap executed.
+     * - The solver then proceeds to evaluate the best quote/swap based on the current market conditions (local state)
+     *    and sends a message towards the executor thread, where we proceed to execute the swap.
+     * - Once the swap is executed, the executor thread sends a message towards the API server.
+     */
+    /* sender == API server | receiver = Solver thread */
+    let (request_tx, request_rx) = mpsc::channel::<DispatchParams>();
+    /* sender = Solver thread | receiver = Executor thread */
+    let (response_tx, response_rx) = mpsc::channel::<Vec<SwapAndAccountMetas>>();
+    /* sender = Executor thread */
+    let (executor_tx, _) = mpsc::channel::<DispatchResponse>();
 
-    let _ = tokio::spawn(async move {
-        api_server::ApiServer::new(api_server::ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers })
-            .expect("failed to create server")
-            .start()
-            .await
-            .expect("failed to start server")
-    });
+    let _ = {
+        let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), program_markets, markets: markets.clone(), account_map };
+        tokio::spawn(async move { GeyserPoolStateIngestor::new(cfg).ingest(state_transmitter).await });
+    };
+    let _ = {
+        let cfg = SolverCfg { markets, rx: request_rx, tx: response_tx };
+        tokio::spawn(async move { Solver::new(cfg).compute(state_transmitter, signal_executor).await });
+    };
+    let _ = {
+        let cfg = BaseExecutorCfg { client: client_http, solver_rx: response_rx, executor_tx };
+        tokio::spawn(async move { BaseExecutor::new(cfg).execute(signal_executor).await });
+    };
+
+    let _ = {
+        let cfg = ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers, request_tx };
+        tokio::spawn(async move { api_server::ApiServer::new(cfg).expect("failed to create server").start().await.expect("failed to start server") });
+    };
 
     #[cfg(feature = "metrics")]
     let _ = tokio::spawn(async move {

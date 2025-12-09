@@ -31,14 +31,31 @@ impl ExecuteSignal for SignalExecutor {}
 ///   -> the value is a list of the markets we collect data for
 pub type Programs = std::collections::HashMap<solana_sdk::pubkey::Pubkey, Vec<solana_sdk::pubkey::Pubkey>>;
 
-/// HashMap<Pubkey, Box<dyn Amm>>
+/// Arc<Mutex<HashMap<Pubkey, Box<dyn Amm>>>>
 ///
 ///   -> the pubkey is the market addr
 ///   -> the value is the actual market impl
-pub type Markets = std::collections::HashMap<solana_sdk::pubkey::Pubkey, std::sync::Arc<std::sync::Mutex<Box<dyn crate::adapters::amms::Amm>>>>;
+pub type Markets = std::sync::Arc<std::sync::Mutex<std::collections::HashMap<solana_sdk::pubkey::Pubkey, Box<dyn crate::adapters::amms::Amm>>>>;
 
 /// HashMap<Pubkey, Pubkey>
 ///
 ///   -> the key is an account addr we receive subscription updates for
 ///   -> the value is the market addr (i.e the 'owner acc' of the key account addr)
 pub type StateAccountToMarket = std::collections::HashMap<solana_sdk::pubkey::Pubkey, solana_sdk::pubkey::Pubkey>;
+
+#[derive(Copy, Clone, Debug, Default, serde::Deserialize, serde::Serialize, utoipa::ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum SrcKind {
+    // get the best pricing from any aggregator
+    #[default]
+    Aggregators,
+
+    // poke a particular aggregator for quote/swap
+    Jupiter,
+    DFlow,
+
+    // get the best pricing from any of the integrated AMMs
+    // perhaps we can get even more granular here and segment into (prop|public) AMMs
+    #[serde(rename = "amms")]
+    AMMs,
+}

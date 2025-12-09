@@ -1,9 +1,13 @@
-use std::str::FromStr;
+use std::{str::FromStr, sync::mpsc};
 
 use actix_web::{App, HttpResponse, HttpServer, middleware::Logger, web};
-use magnus::adapters::{
-    QuoteParams, QuoteResponse, SwapMode,
-    aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
+use magnus::{
+    Markets, SrcKind,
+    adapters::{
+        QuoteAndSwapResponse, QuoteParams, SwapMode,
+        aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
+    },
+    solve::{DispatchParams, DispatchResponse},
 };
 use metrics::counter;
 use serde::Deserialize;
@@ -14,26 +18,9 @@ use utoipa::{OpenApi, ToSchema};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_swagger_ui::SwaggerUi;
 
-#[derive(Copy, Clone, Debug, Default, Deserialize, ToSchema)]
-#[serde(rename_all = "lowercase")]
-pub enum SrcKind {
-    // get the best pricing from any aggregator
-    #[default]
-    Aggregators,
-
-    // poke only one of the aggregators for a price
-    Jupiter,
-    DFlow,
-
-    // get the best pricing from any of the integrated AMMs
-    // perhaps we can get even more granular here and segment into (prop|public) AMMs
-    #[serde(rename = "amms")]
-    AMMs,
-}
-
 #[derive(Clone, Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct QuoteOrSimParam {
+pub struct QuoteOrSimUserParam {
     input_mint: String,
     output_mint: String,
     amount: u64,
@@ -43,14 +30,20 @@ pub struct QuoteOrSimParam {
 }
 // --
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ApiServerCfg {
     pub host: String,
     pub workers: u16,
+    pub request_tx: mpsc::Sender<DispatchParams>,
 }
 
 pub struct ApiServer {
     inner: actix_web::dev::Server,
+}
+
+#[derive(Clone)]
+pub struct ServerState {
+    pub request_tx: mpsc::Sender<DispatchParams>,
 }
 
 impl ApiServer {
@@ -60,9 +53,14 @@ impl ApiServer {
         struct ApiDoc;
         let openapi = ApiDoc::openapi();
 
+        let state = ServerState { request_tx: cfg.request_tx.clone() };
+
         Ok(ApiServer {
             inner: HttpServer::new(move || {
                 App::new()
+                    // state
+                    .app_data(web::Data::new(state.clone()))
+
                     // middlewares
                     .wrap(Logger::default())
                     .wrap(TracingLogger::default())
@@ -97,7 +95,7 @@ impl ApiServer {
     }
 }
 
-fn sanity_check_quote_or_sim_param(params: &QuoteOrSimParam) -> eyre::Result<(Pubkey, Pubkey)> {
+fn sanity_check_quote_or_sim_param(params: &QuoteOrSimUserParam) -> eyre::Result<(Pubkey, Pubkey)> {
     // sanity check the mints are actual valid pubkeys
     let keys = match (Pubkey::from_str(&params.input_mint).is_err(), Pubkey::from_str(&params.output_mint).is_err()) {
         (true, true) => eyre::bail!("Invalid inputMint and outputMint"),
@@ -118,11 +116,11 @@ fn sanity_check_quote_or_sim_param(params: &QuoteOrSimParam) -> eyre::Result<(Pu
         ("amount" = u64, description = "The amount to quote")
     ),
     responses(
-        (status = 200, description = "Successfully retrieved the quote", body = QuoteResponse),
+        (status = 200, description = "Successfully retrieved the quote", body = QuoteAndSwapResponse),
         (status = 500, description = "Internal Server Error")
     )
 )]
-async fn quote_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
+async fn quote_handler(params: web::Query<QuoteOrSimUserParam>, state: web::Data<ServerState>) -> HttpResponse {
     counter!("API HITS", "quotes" => "/api/v1/quote").increment(1);
 
     let (input_mint, output_mint) = match sanity_check_quote_or_sim_param(&params) {
@@ -163,7 +161,17 @@ async fn quote_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
         SrcKind::AMMs => {
             // TODO; - we'll send a msg towards `Solve::compute`
             // and based on the provided result, we'll return the appropriate response
-            HttpResponse::NotImplemented().finish()
+            let (response_tx, response_rx) = oneshot::channel();
+
+            let dispatch = DispatchParams::Quote { params: QuoteParams { swap_mode: SwapMode::ExactIn, amount: params.amount, input_mint, output_mint }, response_tx };
+
+            state.request_tx.send(dispatch).expect("send invalid transmitter req");
+            let response = response_rx.recv();
+
+            match response {
+                Ok(response) => HttpResponse::Ok().json(response),
+                Err(_) => HttpResponse::InternalServerError().json(json!({"error": "no response"})),
+            }
         }
     }
 }
@@ -176,7 +184,7 @@ async fn quote_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn simulate_handler(params: web::Query<QuoteOrSimParam>) -> HttpResponse {
+pub async fn simulate_handler(params: web::Query<QuoteOrSimUserParam>, _: web::Data<ServerState>) -> HttpResponse {
     counter!("API HITS", "simulations" => "/api/v1/simulate").increment(1);
 
     if let Err(e) = sanity_check_quote_or_sim_param(&params) {

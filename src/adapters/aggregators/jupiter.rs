@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    adapters::{Adapter, AggregatorKind, QuotePlanItem, QuoteResponse, aggregators::Aggregator},
+    SrcKind,
+    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, aggregators::Aggregator},
     helpers::parse_amount,
 };
 
@@ -13,11 +14,11 @@ impl Adapter for Jupiter {}
 
 #[async_trait::async_trait]
 impl Aggregator for Jupiter {
-    async fn quote(&self, params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::QuoteResponse> {
+    async fn quote(&self, params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::QuoteAndSwapResponse> {
         let url = format!("{}/ultra/v1/order?inputMint={}&outputMint={}&amount={}", API_URL, params.input_mint, params.output_mint, params.amount);
 
-        let resp: JupiterQuoteResp = reqwest::get(&url).await?.json().await?;
-        let quote = crate::adapters::QuoteResponse::from(resp);
+        let resp: JupQuoteResp = reqwest::get(&url).await?.json().await?;
+        let quote = crate::adapters::QuoteAndSwapResponse::from(resp);
 
         Ok(quote)
     }
@@ -26,9 +27,6 @@ impl Aggregator for Jupiter {
         unimplemented!("not yet implemented")
     }
 }
-
-//#[async_trait::async_trait]
-//impl Aggregator for Jupiter {}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -52,7 +50,7 @@ pub struct JupRoutePlanItem {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct JupiterQuoteResp {
+pub struct JupQuoteResp {
     pub input_mint: String,
     pub output_mint: String,
     pub in_amount: String,
@@ -61,12 +59,12 @@ pub struct JupiterQuoteResp {
     pub route_plan: Vec<JupRoutePlanItem>,
 }
 
-impl From<JupiterQuoteResp> for QuoteResponse {
-    fn from(jup: JupiterQuoteResp) -> Self {
+impl From<JupQuoteResp> for QuoteAndSwapResponse {
+    fn from(jup: JupQuoteResp) -> Self {
         let route_plan = jup
             .route_plan
             .iter()
-            .map(|v| QuotePlanItem {
+            .map(|v| PlanItem {
                 venue: v.swap_info.label.clone(),
                 market_key: v.swap_info.amm_key.clone(),
                 input_mint: v.swap_info.input_mint.clone(),
@@ -76,8 +74,8 @@ impl From<JupiterQuoteResp> for QuoteResponse {
             })
             .collect();
 
-        QuoteResponse {
-            aggregator: AggregatorKind::Jupiter,
+        QuoteAndSwapResponse {
+            source: SrcKind::Jupiter,
             input_mint: jup.input_mint,
             output_mint: jup.output_mint,
             in_amount: parse_amount(&jup.in_amount).unwrap_or(0),
