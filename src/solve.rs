@@ -22,6 +22,7 @@ impl Solver {
 #[async_trait::async_trait]
 impl Strategy for Solver {
     async fn compute<T: TransmitState, S: ExecuteSignal>(state: T, signal: S) -> eyre::Result<()> {
-        unimplemented!()
+        // todo
+        Ok(())
     }
 }

@@ -17,6 +17,7 @@ impl SendTx {
 #[async_trait::async_trait]
 impl Payload for SendTx {
     async fn execute<T: ExecuteSignal>(signal: T) -> eyre::Result<()> {
-        unimplemented!()
+        // todo
+        Ok(())
     }
 }

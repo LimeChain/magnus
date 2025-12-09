@@ -3,6 +3,7 @@
 //! |1| - ..
 //! |2| - ..
 //! |3| - ..
+
 pub mod adapters;
 pub mod bootstrap;
 pub mod curves;
@@ -23,3 +24,21 @@ impl TransmitState for StateTransmitter {}
 #[derive(Copy, Clone, Debug)]
 pub struct SignalExecutor;
 impl ExecuteSignal for SignalExecutor {}
+
+/// HashMap<Pubkey, Vec<Pubkey>>
+///
+///   -> the key is the program (amm) addr
+///   -> the value is a list of the markets we collect data for
+pub type Programs = std::collections::HashMap<solana_sdk::pubkey::Pubkey, Vec<solana_sdk::pubkey::Pubkey>>;
+
+/// HashMap<Pubkey, Box<dyn Amm>>
+///
+///   -> the pubkey is the market addr
+///   -> the value is the actual market impl
+pub type Markets = std::collections::HashMap<solana_sdk::pubkey::Pubkey, std::sync::Arc<std::sync::Mutex<Box<dyn crate::adapters::amms::Amm>>>>;
+
+/// HashMap<Pubkey, Pubkey>
+///
+///   -> the key is an account addr we receive subscription updates for
+///   -> the value is the market addr (i.e the 'owner acc' of the key account addr)
+pub type StateAccountToMarket = std::collections::HashMap<solana_sdk::pubkey::Pubkey, solana_sdk::pubkey::Pubkey>;

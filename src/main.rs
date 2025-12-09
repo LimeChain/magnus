@@ -2,15 +2,11 @@ pub mod api_server;
 pub mod args;
 pub mod metrics_server;
 
-use std::collections::HashMap;
-
 use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
-    SignalExecutor, StateTransmitter, TransmitState,
-    bootstrap::Bootstrap,
-    geyser_client::GeyserClientWrapped,
-    helpers::{deserialize_anchor_account, geyser_acc_to_native},
+    SignalExecutor, StateTransmitter,
+    bootstrap::{Bootstrap, MarketRaw},
     ingest::{GeyserPoolStateIngestor, Ingest},
     payload::{Payload, SendTx},
     solve::{Solver, Strategy},
@@ -18,17 +14,17 @@ use magnus::{
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use secrecy::ExposeSecret;
-use solana_sdk::{pubkey, pubkey::Pubkey};
+use solana_sdk::pubkey::Pubkey;
 use tokio::signal::unix::{SignalKind, signal};
-use tracing::{debug, error, info};
+use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
-use yellowstone_grpc_proto::geyser::subscribe_update;
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
         .with_thread_ids(true)
+        .with_line_number(true)
         .with_target(true)
         .with_timer(UtcTime::rfc_3339())
         .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::default().add_directive(tracing::Level::INFO.into())))
@@ -76,6 +72,12 @@ async fn run_components() {
     // metrics server
 }
 
+#[derive(Clone, Debug)]
+pub struct AmmProgram {
+    owner: Pubkey,
+    markets: Vec<MarketRaw>,
+}
+
 async fn run(cfg: Cfg) {
     let mut interrupt = signal(SignalKind::interrupt()).expect("Unable to initialise interrupt signal handler");
     let mut terminate = signal(SignalKind::terminate()).expect("Unable to initialise termination signal handler");
@@ -89,7 +91,7 @@ async fn run(cfg: Cfg) {
      * |3| Implement a proper routing engine based on some defined constraints
      */
 
-    let client_http = solana_client::rpc_client::RpcClient::new(cfg.http_url);
+    let client_http = solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url);
     let client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
     let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
@@ -107,8 +109,11 @@ async fn run(cfg: Cfg) {
         None => Bootstrap::ingest_from_jupiter().await.expect("unable to ingest from jupiter"),
     };
 
-    let programs = Bootstrap::transform_market_to_owner(&markets_raw.clone());
-    let markets = Bootstrap::transform_market_to_dex(&markets_raw.clone());
+    let programs = Bootstrap::get_program_markets(&markets_raw);
+    let markets = Bootstrap::init_markets(programs).await.expect("unable to initialise markets");
+    let account_map = Bootstrap::acquire_account_map(&client_http, &markets).await.expect("unable to acquire account map");
+
+    let program_markets = Bootstrap::get_program_markets(&markets_raw);
     info!("{:#?}", markets);
 
     /* prior spawning the ingestor, we'll need to ensure that the current state is actually fetched
@@ -118,9 +123,9 @@ async fn run(cfg: Cfg) {
     let state_transmitter = StateTransmitter;
     let signal_executor = SignalExecutor;
 
-    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, markets).ingest(state_transmitter).await });
-    let _ = tokio::spawn(async move { Solver::compute(state_transmitter, signal_executor) });
-    let _ = tokio::spawn(async move { SendTx::execute(signal_executor) });
+    let _ = tokio::spawn(async move { GeyserPoolStateIngestor::new(client_geyser, client_http, program_markets, markets, account_map).ingest(state_transmitter).await });
+    let _ = tokio::spawn(async move { Solver::compute(state_transmitter, signal_executor).await });
+    let _ = tokio::spawn(async move { SendTx::execute(signal_executor).await });
 
     let _ = tokio::spawn(async move {
         api_server::ApiServer::new(api_server::ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers })
