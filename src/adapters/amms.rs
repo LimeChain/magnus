@@ -1,6 +1,7 @@
 use std::{
     boxed::Box,
     collections::{HashMap, HashSet},
+    fmt::Debug,
     sync::{
         Arc,
         atomic::{AtomicI64, AtomicU64},
@@ -16,6 +17,7 @@ pub mod base_cl;
 pub mod base_cp;
 pub mod humidifi;
 pub mod obric_v2;
+//pub mod openbook_v2;
 pub mod raydium_cl;
 pub mod raydium_cp;
 pub mod swap_state;
@@ -31,9 +33,15 @@ pub const RAYDIUM_CP: Pubkey = pubkey!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5q
 pub const RAYDIUM_CL: Pubkey = pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
 pub const HUMIDIFI: Pubkey = pubkey!("9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp");
 pub const OBRIC_V2: Pubkey = pubkey!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
+pub const OPENBOOK_V2: Pubkey = pubkey!("opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb");
+
+// HashMap<Pubkey, Account> (aka AccountMap)
+//   -> the key is the account that we follow for updates
+//   -> the value is the account structure
+pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;
 
 /// ..
-pub trait Amm: Adapter + Send + Sync {
+pub trait Amm: Adapter + Send + Sync + Debug {
     fn from_keyed_account(keyed_account: &KeyedAccount, amm_context: &AmmContext) -> eyre::Result<Self>
     where
         Self: Sized;
@@ -62,9 +70,6 @@ pub trait Amm: Adapter + Send + Sync {
     fn supports_exact_out(&self) -> bool {
         false
     }
-
-    // TODO: this has to be implemented properly sometime in the future
-    // fn clone_amm(&self) -> Box<dyn Amm + Send + Sync>;
 
     /// It can only trade in one direction from its first mint to second mint, assuming it is a two mint AMM
     fn unidirectional(&self) -> bool {
@@ -96,14 +101,14 @@ pub trait Amm: Adapter + Send + Sync {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct KeyedAccount {
     pub key: Pubkey,
     pub account: Account,
     pub params: Option<serde_json::Value>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone, Debug, Default)]
 pub struct ClockRef {
     pub slot: Arc<AtomicU64>,
     /// The timestamp of the first `Slot` in this `Epoch`.
@@ -124,6 +129,7 @@ impl ClockRef {
     }
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct AmmContext {
     pub clock_ref: ClockRef,
 }
@@ -138,24 +144,4 @@ pub enum Side {
 pub enum AccountsType {
     TransferHookA,
     TransferHookB,
-    // TransferHookReward,
-    // TransferHookInput,
-    // TransferHookIntermediate,
-    // TransferHookOutput,
-    //TickArray,
-    //TickArrayOne,
-    //TickArrayTwo,
 }
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct RemainingAccountsSlice {
-    pub accounts_type: AccountsType,
-    pub length: u8,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct RemainingAccountsInfo {
-    pub slices: Vec<RemainingAccountsSlice>,
-}
-
-pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;

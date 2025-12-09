@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
 use utoipa::ToSchema;
 
-use crate::adapters::aggregators::AggregatorKind;
+use crate::adapters::{aggregators::AggregatorKind, amms::Side};
 
 pub mod aggregators;
 pub mod amms;
@@ -61,10 +61,9 @@ pub struct SwapAndAccountMetas {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Swap {
     Base, // TODO: must be removed
-
     RaydiumCP,
-
     ObricV2,
+    OpenbookV2 { side: Side },
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema)]

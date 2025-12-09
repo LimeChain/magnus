@@ -21,15 +21,18 @@ anchor-spl = { version = "0.31.0" }
 anyhow = "1.0.100"
 arrayref = "0.3.9"
 async-trait = "0.1.89"
+bincode = { version = "2.0.1", features = ["serde"] }
 # borsh = "1.5.7"
 borsh = "1.6.0"
 #borsh = "0.10.4"
 clap = { version = "4.5.50", features = ["derive", "env", "color", "std"] }
 enum_dispatch = "0.3.13"
 eyre = "0.6.12"
+fixed = "1.29.0"
 futures = "0.3.31"
 futures-util = "0.3.31"
 hex = "0.4.3"
+#manifest-dex = "2.0.1"
 #litesvm = "0.8.2"
 metrics = { version = "0.24.2", optional = true }
 metrics-exporter-prometheus = { version = "0.17.2", optional = true }
@@ -37,6 +40,7 @@ num = "0.4.3"
 num-derive = "0.4"
 num-traits = "0.2"
 num_cpus = "1.17.0"
+num_enum = "0.7.5"
 #pyth-sdk = "0.8.0"
 #pyth-sdk-solana = "0.10.6"
 pyth-sdk = { git = "https://github.com/lbkolev/pyth-sdk-rs", package = "pyth-sdk" }
@@ -63,6 +67,7 @@ spl-associated-token-account = "8.0.0"
 spl-math = "0.3.0"
 spl-token = "8.0.0"
 spl-token-2022 = "10.0.0"
+static_assertions = "1.1.0"
 thiserror = "2.0.17"
 tokio = { version = "1.48.0", features = ["full"] }
 tonic = { version = "0.14.2", features = ["tls-native-roots", "tls-ring"] }
