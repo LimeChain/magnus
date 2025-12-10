@@ -6,7 +6,7 @@ use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{
-    Adapter, Swap,
+    Adapter, AmmSwap,
     amms::{
         AccountMap, Amm, AmmContext, KeyedAccount, OBRIC_V2, Quote, QuoteParams, SPL_TOKEN_PROGRAM_ID, SwapAndAccountMetas, SwapParams,
         obric_v2::state::{PriceFeed, SSTradingPair},
@@ -19,7 +19,8 @@ pub enum AmmError {
     AccountNotFound,
 }
 
-pub struct ObricV2Amm {
+#[derive(Clone, Debug, Default)]
+pub struct ObricV2 {
     key: Pubkey,
     pub state: SSTradingPair,
     current_x: u64,
@@ -28,15 +29,21 @@ pub struct ObricV2Amm {
     pub y_decimals: u8,
 }
 
-impl Adapter for ObricV2Amm {}
+impl ObricV2 {
+    pub fn new() -> ObricV2 {
+        ObricV2::default()
+    }
+}
 
-impl Amm for ObricV2Amm {
+impl Adapter for ObricV2 {}
+
+impl Amm for ObricV2 {
     fn program_id(&self) -> Pubkey {
         OBRIC_V2
     }
 
     fn label(&self) -> String {
-        "Obric V2".to_string()
+        "ObricV2".to_string()
     }
 
     fn get_accounts_len(&self) -> usize {
@@ -44,11 +51,11 @@ impl Amm for ObricV2Amm {
     }
 
     fn key(&self) -> Pubkey {
-        return self.key;
+        self.key
     }
 
     fn get_reserve_mints(&self) -> Vec<Pubkey> {
-        return [self.state.mint_x, self.state.mint_y].to_vec();
+        [self.state.mint_x, self.state.mint_y].to_vec()
     }
 
     fn has_dynamic_accounts(&self) -> bool {
@@ -57,9 +64,9 @@ impl Amm for ObricV2Amm {
 
     fn get_accounts_to_update(&self) -> Vec<Pubkey> {
         if self.x_decimals == 0 && self.y_decimals == 0 {
-            return [self.state.reserve_x, self.state.reserve_y, self.state.x_price_feed_id, self.state.y_price_feed_id, self.state.mint_x, self.state.mint_y].to_vec();
+            [self.state.reserve_x, self.state.reserve_y, self.state.x_price_feed_id, self.state.y_price_feed_id, self.state.mint_x, self.state.mint_y].to_vec()
         } else {
-            return [self.state.reserve_x, self.state.reserve_y, self.state.x_price_feed_id, self.state.y_price_feed_id].to_vec();
+            [self.state.reserve_x, self.state.reserve_y, self.state.x_price_feed_id, self.state.y_price_feed_id].to_vec()
         }
     }
 
@@ -82,8 +89,8 @@ impl Amm for ObricV2Amm {
             self.y_decimals = min_y.decimals;
         }
 
-        let price_x_data = &mut &accounts_map.get(&self.state.x_price_feed_id).ok_or(AmmError::AccountNotFound)?.data[..];
-        let price_y_data = &mut &accounts_map.get(&self.state.y_price_feed_id).ok_or(AmmError::AccountNotFound)?.data[..];
+        let price_x_data = &mut &accounts_map.get(&self.state.x_price_feed_id).ok_or(AmmError::AccountNotFound)?.data[8..];
+        let price_y_data = &mut &accounts_map.get(&self.state.y_price_feed_id).ok_or(AmmError::AccountNotFound)?.data[8..];
         let price_x_fee = &PriceFeed::try_deserialize(price_x_data)?;
         let price_y_fee = &PriceFeed::try_deserialize(price_y_data)?;
         let price_x = price_x_fee.price_normalized()?.price as u64;
@@ -133,7 +140,11 @@ impl Amm for ObricV2Amm {
                 protocol_fee_share_thousandth: state.protocol_fee_share_thousandth,
                 volume_record: state.volume_record,
                 volume_time_record: state.volume_time_record,
+                version: state.version,
                 padding: state.padding,
+                mint_sslp_x: state.mint_sslp_x,
+                mint_sslp_y: state.mint_sslp_y,
+                padding2: state.padding2,
             },
             current_x: self.current_x,
             current_y: self.current_y,
@@ -146,20 +157,20 @@ impl Amm for ObricV2Amm {
     where
         Self: Sized,
     {
-        let data = &mut &keyed_account.account.data.clone()[0..];
+        let data = &mut &keyed_account.account.data.clone()[8..];
         let ss_trading_pair = SSTradingPair::deserialize(data)?;
         Ok(Self { key: keyed_account.key, state: ss_trading_pair, current_x: 0u64, current_y: 0u64, x_decimals: 0u8, y_decimals: 0u8 })
     }
 
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas> {
-        let (user_token_account_x, user_token_account_y, protocol_fee) = if swap_params.source_mint.eq(&self.state.mint_x) {
+        let (user_token_account_x, user_token_account_y, protocol_fee) = if swap_params.input_mint.eq(&self.state.mint_x) {
             (swap_params.source_token_account, swap_params.destination_token_account, self.state.protocol_fee_y)
         } else {
             (swap_params.destination_token_account, swap_params.source_token_account, self.state.protocol_fee_x)
         };
 
         Ok(SwapAndAccountMetas {
-            swap: Swap::ObricV2,
+            swap: AmmSwap::ObricV2,
             account_metas: vec![
                 AccountMeta::new(self.key(), false),
                 AccountMeta::new_readonly(self.state.mint_x, false),

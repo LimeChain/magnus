@@ -54,7 +54,7 @@ impl Deref for PriceFeed {
 }
 
 /* -- */
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Default)]
 pub struct SSTradingPair {
     pub is_initialized: bool,
 
@@ -87,7 +87,12 @@ pub struct SSTradingPair {
     pub volume_record: [u64; 8],
     pub volume_time_record: [i64; 8],
 
-    pub padding: [u64; 24],
+    pub version: u8,
+
+    pub padding: [u8; 8],
+    pub mint_sslp_x: Pubkey,
+    pub mint_sslp_y: Pubkey,
+    pub padding2: [u8; 16],
 }
 
 impl SSTradingPair {
@@ -119,8 +124,8 @@ impl SSTradingPair {
         Ok((target_x, target_y))
     }
 
-    /**
-    Returns (output_to_user, fee_to_protocol)
+    /*
+     * Returns (output_to_user, fee_to_protocol)
      */
     #[inline(never)]
     pub fn quote_x_to_y(&self, input_x: u64, current_x: u64, current_y: u64) -> Result<(u64, u64, u64)> {
@@ -159,8 +164,8 @@ impl SSTradingPair {
         Ok((output_after_fee_y, protocol_fee_y, lp_fee_y))
     }
 
-    /**
-    Returns (output_to_user, fee_to_protocol, fee_to_reserve_x)
+    /*
+     * Returns (output_to_user, fee_to_protocol, fee_to_reserve_x)
      */
     #[inline(never)]
     pub fn quote_y_to_x(&self, input_y: u64, current_x: u64, current_y: u64) -> Result<(u64, u64, u64)> {

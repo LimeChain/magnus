@@ -75,11 +75,11 @@ impl Bootstrap {
     /// Each account in the vec responds to the same index of the markets_addrs vec.
     pub async fn acquire_account_map(client: &RpcClient, markets: &Markets) -> eyre::Result<AccountMap> {
         let markets_addrs: Vec<Pubkey> = markets.lock().unwrap().keys().cloned().collect();
-        let account_map = client.get_multiple_accounts(&markets_addrs).await?;
+        let accs = client.get_multiple_accounts(&markets_addrs).await?;
         let mut z = AccountMap::new();
         let mut counter = 0;
 
-        account_map.iter().for_each(|am| {
+        accs.iter().for_each(|am| {
             if let Some(account) = am {
                 z.insert(markets_addrs[counter], account.clone());
             }
