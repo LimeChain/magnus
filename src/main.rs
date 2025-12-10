@@ -154,9 +154,13 @@ async fn run(cfg: Cfg) {
         tokio::spawn(async move { BaseExecutor::new(cfg).execute(signal_executor).await });
     };
 
-    let _ = {
+    let server_handle = {
         let cfg = ApiServerCfg { host: cfg.api_server_host, workers: cfg.api_server_workers, request_tx };
-        tokio::spawn(async move { api_server::ApiServer::new(cfg).expect("failed to create server").start().await.expect("failed to start server") });
+        let server = api_server::ApiServer::new(cfg).expect("failed to create server");
+        let handle = server.handle().clone();
+        tokio::spawn(async move { server.start().await.expect("failed to start server") });
+
+        handle
     };
 
     #[cfg(feature = "metrics")]
@@ -169,8 +173,12 @@ async fn run(cfg: Cfg) {
     });
 
     tokio::select! {
-        _ = interrupt.recv() => {}
-        _ = terminate.recv() => {}
+        _ = interrupt.recv() => {
+            server_handle.stop(true).await;
+        }
+        _ = terminate.recv() => {
+            server_handle.stop(false).await;
+        }
     }
 }
 

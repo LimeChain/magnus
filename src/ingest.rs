@@ -35,7 +35,6 @@ pub struct IngestorCfg<T: Interceptor + Send + Sync> {
     pub program_markets: Programs,
     pub markets: Markets,
     pub account_map: AccountMap,
-    pub state_acc_to_market: StateAccountToMarket,
 }
 
 pub struct GeyserPoolStateIngestor<T: Interceptor + Send + Sync> {
@@ -44,7 +43,6 @@ pub struct GeyserPoolStateIngestor<T: Interceptor + Send + Sync> {
     program_markets: Programs,
     markets: Markets,
     account_map: AccountMap,
-    state_acc_to_market: StateAccountToMarket,
 }
 
 impl<T: Interceptor + Send + Sync> GeyserPoolStateIngestor<T> {
@@ -55,7 +53,6 @@ impl<T: Interceptor + Send + Sync> GeyserPoolStateIngestor<T> {
             program_markets: cfg.program_markets,
             markets: cfg.markets,
             account_map: cfg.account_map,
-            state_acc_to_market: StateAccountToMarket::new(),
         }
     }
 }
@@ -69,7 +66,20 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
     async fn ingest(&mut self, _: StateTransmitter) -> eyre::Result<()> {
         info!("starting service: {}", self.name() /* self.markets.len() */,);
 
-        let filter = self.client_geyser.craft_filter(self.state_acc_to_market.keys().map(|v| v.to_string()).collect()).await;
+        let state_acc_to_market: StateAccountToMarket = self
+            .markets
+            .lock()
+            .unwrap()
+            .values()
+            .into_iter()
+            .map(|market| {
+                let accs = market.get_accounts_to_update();
+                accs.into_iter().map(|acc| (acc, market.key()))
+            })
+            .flatten()
+            .collect();
+
+        let filter = self.client_geyser.craft_filter(state_acc_to_market.keys().map(|v| v.to_string()).collect()).await;
         let mut stream = self.client_geyser.subscribe(filter).await;
 
         // need to init through ::from_keyed_account()
@@ -86,10 +96,12 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
                         self.account_map.insert(pubkey, account);
 
                         // we don't need to send a msg to `Strategy` since we're sharing the underlying structure
-                        let market_pubkey = self.state_acc_to_market.get(&pubkey).unwrap();
+                        let market_pubkey = state_acc_to_market.get(&pubkey).unwrap();
                         if let Some(market) = self.markets.lock().unwrap().get_mut(market_pubkey) {
                             match market.update(&self.account_map) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    info!("recv update")
+                                }
                                 Err(_) => {}
                             }
                         }

@@ -1,6 +1,6 @@
 use std::{str::FromStr, sync::mpsc};
 
-use actix_web::{App, HttpResponse, HttpServer, middleware::Logger, web};
+use actix_web::{App, HttpResponse, HttpServer, dev::ServerHandle, middleware::Logger, web};
 use magnus::{
     Markets, SrcKind,
     adapters::{
@@ -28,7 +28,6 @@ pub struct QuoteOrSimUserParam {
     #[serde(default)]
     src_kind: SrcKind,
 }
-// --
 
 #[derive(Debug)]
 pub struct ApiServerCfg {
@@ -39,6 +38,7 @@ pub struct ApiServerCfg {
 
 pub struct ApiServer {
     inner: actix_web::dev::Server,
+    handle: actix_web::dev::ServerHandle,
 }
 
 #[derive(Clone)]
@@ -55,39 +55,45 @@ impl ApiServer {
 
         let state = ServerState { request_tx: cfg.request_tx.clone() };
 
-        Ok(ApiServer {
-            inner: HttpServer::new(move || {
-                App::new()
-                    // state
-                    .app_data(web::Data::new(state.clone()))
+        let http_server = HttpServer::new(move || {
+            App::new()
+                // state
+                .app_data(web::Data::new(state.clone()))
 
-                    // middlewares
-                    .wrap(Logger::default())
-                    .wrap(TracingLogger::default())
+                // middlewares
+                .wrap(Logger::default())
+                .wrap(TracingLogger::default())
 
-                    // routes - docs
-                    .service(RapiDoc::with_openapi("docs/openapi.json", openapi.clone()).path("/docs"))
-                    .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/swagger-ui/openapi.json", openapi.clone()))
+                // routes - docs
+                .service(RapiDoc::with_openapi("docs/openapi.json", openapi.clone()).path("/docs"))
+                .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/swagger-ui/openapi.json", openapi.clone()))
 
-                    // routes - api
-                    .route("/health", web::get().to(HttpResponse::Ok))
-                    .service(
-                        web::scope("/api").service(
-                            web::scope("/v1")
-                                // trading related
-                                .route("/quote", web::get().to(quote_handler))
-                                .route("/simulate", web::get().to(simulate_handler))
+                // routes - api
+                .route("/health", web::get().to(HttpResponse::Ok))
+                .service(
+                    web::scope("/api").service(
+                        web::scope("/v1")
+                            // trading related
+                            .route("/quote", web::get().to(quote_handler))
+                            .route("/simulate", web::get().to(simulate_handler))
 
-                                .route("/markets/supported", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // analytics?
-                                .route("/markets/load", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets?
-                            )
-                    )
-            })
-            .workers(cfg.workers as usize)
-            .bind(cfg.host.as_str())?
-            .disable_signals()
-            .run(),
+                            .route("/markets/supported", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // analytics?
+                            .route("/markets/load", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets?
+                        )
+                )
         })
+        .workers(cfg.workers as usize)
+        .bind(cfg.host.as_str())?
+        .disable_signals()
+        .run();
+
+        let handle = http_server.handle();
+
+        Ok(ApiServer { inner: http_server, handle })
+    }
+
+    pub fn handle(&self) -> &ServerHandle {
+        &self.handle
     }
 
     pub async fn start(self) -> std::io::Result<()> {
