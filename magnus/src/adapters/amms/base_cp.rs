@@ -12,7 +12,7 @@ use spl_token::state::Account as TokenAccount;
 
 use crate::{
     adapters::{
-        Adapter, Quote, QuoteParams, Swap, SwapAndAccountMetas, SwapParams,
+        Adapter, AmmSwap, Quote, QuoteParams, SwapAndAccountMetas, SwapParams,
         amms::{AccountMap, Amm, AmmContext, KeyedAccount, swap_state::ConstantProductSwapV1},
         helpers::{TokenSwap, get_swap_curve_result, to_dex_account_metas},
     },
@@ -95,7 +95,7 @@ impl Amm for BaseConstantProductAmm {
         let state = ConstantProductSwapV1::unpack(&keyed_account.account.data[1..])?;
         let reserve_mints = [state.token_a_mint, state.token_b_mint];
 
-        // TODO: export outside on a per-exchange basis
+        // defined on a per-exchange basis
         let label = String::default();
 
         let program_id = keyed_account.account.owner;
@@ -141,16 +141,16 @@ impl Amm for BaseConstantProductAmm {
     }
 
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> eyre::Result<SwapAndAccountMetas> {
-        let SwapParams { source_mint, destination_token_account, source_token_account, token_transfer_authority, .. } = swap_params;
+        let SwapParams { input_mint, destination_token_account, source_token_account, token_transfer_authority, .. } = swap_params;
 
-        let (swap_source, swap_destination) = if *source_mint == self.state.token_a_mint {
+        let (swap_source, swap_destination) = if *input_mint == self.state.token_a_mint {
             (self.state.token_a, self.state.token_b)
         } else {
             (self.state.token_b, self.state.token_a)
         };
 
         Ok(SwapAndAccountMetas {
-            swap: Swap::Base,
+            swap: AmmSwap::RaydiumCP, // defaults to RaydiumCP
             account_metas: to_dex_account_metas(
                 self.program_id,
                 TokenSwap {
