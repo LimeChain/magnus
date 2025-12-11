@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    adapters::{Adapter, AggregatorKind, QuoteParams, QuotePlanItem, QuoteResponse, aggregators::Aggregator},
+    SrcKind,
+    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, QuoteParams, aggregators::Aggregator},
     helpers::parse_amount,
 };
 
@@ -13,11 +14,11 @@ impl Adapter for DFlow {}
 
 #[async_trait::async_trait]
 impl Aggregator for DFlow {
-    async fn quote(&self, params: &QuoteParams) -> eyre::Result<crate::adapters::QuoteResponse> {
+    async fn quote(&self, params: &QuoteParams) -> eyre::Result<crate::adapters::QuoteAndSwapResponse> {
         let url = format!("{}/quote?inputMint={}&outputMint={}&amount={}", API_URL, params.input_mint, params.output_mint, params.amount);
 
         let resp: DFlowQuoteResponse = reqwest::get(&url).await?.json().await?;
-        let quote = QuoteResponse::from(resp);
+        let quote = QuoteAndSwapResponse::from(resp);
 
         Ok(quote)
     }
@@ -48,13 +49,13 @@ pub struct DFlowQuoteResponse {
     pub route_plan: Vec<DFlowRoutePlanItem>,
 }
 
-impl From<DFlowQuoteResponse> for QuoteResponse {
+impl From<DFlowQuoteResponse> for QuoteAndSwapResponse {
     fn from(dflow: DFlowQuoteResponse) -> Self {
         let route_plan = Some(
             dflow
                 .route_plan
                 .iter()
-                .map(|v| QuotePlanItem {
+                .map(|v| PlanItem {
                     venue: v.venue.clone(),
                     market_key: v.market_key.clone(),
                     input_mint: v.input_mint.clone(),
@@ -65,8 +66,8 @@ impl From<DFlowQuoteResponse> for QuoteResponse {
                 .collect(),
         );
 
-        QuoteResponse {
-            aggregator: AggregatorKind::DFlow,
+        QuoteAndSwapResponse {
+            source: SrcKind::DFlow,
             input_mint: dflow.input_mint,
             output_mint: dflow.output_mint,
             in_amount: parse_amount(&dflow.in_amount).unwrap_or(0),

@@ -1,57 +1,107 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{
+    collections::HashMap,
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
 
+use ahash::HashMapExt;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
+
+use crate::{
+    Markets, Programs,
+    adapters::amms::{AccountMap, Amm, OBRIC_V2, RAYDIUM_CP, obric_v2::ObricV2, raydium_cp::RaydiumCP},
+};
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Bootstrap;
 
 impl Bootstrap {
-    pub async fn ingest_from_jupiter() -> eyre::Result<Vec<Market>> {
+    pub async fn ingest_from_jupiter() -> eyre::Result<Vec<MarketRaw>> {
         let response = reqwest::get("https://cache.jup.ag/markets?v=4").await?;
         let markets: Vec<BootstrapMarketData> = response.json().await?;
-        markets.into_iter().map(Market::try_from).collect()
+        markets.into_iter().map(MarketRaw::try_from).collect()
     }
 
-    pub fn ingest_from_file(file: &str) -> eyre::Result<Vec<Market>> {
+    pub fn ingest_from_file(file: &str) -> eyre::Result<Vec<MarketRaw>> {
         let content = std::fs::read_to_string(file)?;
         let markets: Vec<BootstrapMarketData> = serde_json::from_str(&content)?;
-        markets.into_iter().map(Market::try_from).collect()
+        markets.into_iter().map(MarketRaw::try_from).collect()
     }
 
-    /// acquire all the programs for whom we're following one or more markets.
-    pub fn transform_market_to_owner(markets: &Vec<Market>) -> Vec<Pubkey> {
+    /// acquires all the programs for whom we're following one or more markets.
+    pub fn transform_market_to_owner(markets: &Vec<MarketRaw>) -> Vec<Pubkey> {
         markets.iter().map(|market| market.owner).collect()
     }
 
-    pub fn transform_market_to_dex(markets: &Vec<Market>) -> HashMap<Pubkey, Market> {
+    pub fn transform_market_to_dex(markets: &Vec<MarketRaw>) -> HashMap<Pubkey, MarketRaw> {
         markets.iter().map(|market| (market.pubkey, market.clone())).collect()
     }
 
-    pub fn transform_market_to_lookup_table(markets: &Vec<Market>) -> HashMap<Pubkey, Market> {
-        markets.iter().map(|market| (market.lookup_table, market.clone())).collect()
+    pub fn get_program_markets(markets: &Vec<MarketRaw>) -> Programs {
+        let mut program_markets = Programs::new();
+
+        markets.iter().for_each(|market| {
+            if let Some(m) = program_markets.get_mut(&market.owner) {
+                m.push(market.pubkey);
+            } else {
+                program_markets.insert(market.owner, vec![market.pubkey]);
+            }
+        });
+
+        program_markets
+    }
+
+    /// Initialises the corresponding markets based on the provided programs
+    pub async fn init_markets(program_markets: Programs) -> eyre::Result<Markets> {
+        let ir: HashMap<Pubkey, Box<dyn Amm>> = program_markets
+            .iter()
+            .flat_map(|(program, markets)| {
+                markets.iter().map(move |market| {
+                    let amm: Box<dyn Amm> = match program {
+                        &OBRIC_V2 => Box::new(ObricV2::new()),
+                        &RAYDIUM_CP => Box::new(RaydiumCP::new()),
+                        _ => unimplemented!("Market provided ({}) for an unsupported program ({})", market, program),
+                    };
+                    (*market, amm)
+                })
+            })
+            .collect();
+
+        Ok(Arc::new(Mutex::new(ir)))
+    }
+
+    /// https://www.helius.dev/docs/rpc/guides/getmultipleaccounts#response-structure
+    /// Each account in the vec responds to the same index of the markets_addrs vec.
+    pub async fn acquire_account_map(client: &RpcClient, markets: &Markets) -> eyre::Result<AccountMap> {
+        let markets_addrs: Vec<Pubkey> = markets.lock().unwrap().keys().cloned().collect();
+        let accs = client.get_multiple_accounts(&markets_addrs).await?;
+        let mut z = AccountMap::new();
+        let mut counter = 0;
+
+        accs.iter().for_each(|am| {
+            if let Some(account) = am {
+                z.insert(markets_addrs[counter], account.clone());
+            }
+
+            counter += 1;
+        });
+
+        Ok(z)
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Market {
+#[derive(Clone, Debug, Default)]
+pub struct MarketRaw {
     pub pubkey: Pubkey,
     pub owner: Pubkey,
-    pub lookup_table: Pubkey,
-    pub routing_group: u8,
-    //pub swap_size: SwapAccountSize,
 }
 
-impl TryFrom<BootstrapMarketData> for Market {
+impl TryFrom<BootstrapMarketData> for MarketRaw {
     type Error = eyre::Error;
 
     fn try_from(data: BootstrapMarketData) -> Result<Self, Self::Error> {
-        Ok(Self {
-            pubkey: Pubkey::from_str(&data.pubkey)?,
-            owner: Pubkey::from_str(&data.owner)?,
-            lookup_table: Pubkey::from_str(&data.params.address_lookup_table_address)?,
-            routing_group: data.params.routing_group,
-            //swap_size: data.params.swap_account_size,
-        })
+        Ok(Self { pubkey: Pubkey::from_str(&data.pubkey)?, owner: Pubkey::from_str(&data.owner)? })
     }
 }
 
@@ -59,20 +109,7 @@ impl TryFrom<BootstrapMarketData> for Market {
 pub struct BootstrapMarketData {
     pubkey: String,
     owner: String,
-    params: BootstrapParams,
 }
 
-#[derive(Clone, Debug, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BootstrapParams {
-    address_lookup_table_address: String,
-    routing_group: u8,
-    //swap_account_size: SwapAccountSize,
-}
-
-//#[derive(Copy, Clone, Debug, serde::Deserialize)]
-//pub struct SwapAccountSize {
-//    account_compressed_count: u8,
-//    account_len: u8,
-//    account_metas_count: u8,
-//}
+#[cfg(test)]
+mod tests {}

@@ -76,13 +76,8 @@ pub trait Amm: Adapter + Send + Sync + Debug {
         false
     }
 
-    /// For testing purposes, provide a mapping of dependency programs to function
-    fn program_dependencies(&self) -> Vec<(Pubkey, String)> {
-        vec![]
-    }
-
     fn get_accounts_len(&self) -> usize {
-        32 // Default to a near whole legacy transaction to penalize no implementation
+        32 // Default to a large num to penalise no impl
     }
 
     /// The identifier of the underlying liquidity
@@ -94,8 +89,6 @@ pub trait Amm: Adapter + Send + Sync + Debug {
         None
     }
 
-    /// Provides a shortcut to establish if the AMM can be used for trading
-    /// If the market is active at all
     fn is_active(&self) -> bool {
         true
     }
@@ -138,10 +131,4 @@ pub struct AmmContext {
 pub enum Side {
     Bid,
     Ask,
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum AccountsType {
-    TransferHookA,
-    TransferHookB,
 }

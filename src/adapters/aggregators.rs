@@ -9,14 +9,6 @@ use crate::adapters::Adapter;
 /// ..
 #[async_trait::async_trait]
 pub trait Aggregator: Adapter + Send + Sync {
-    async fn quote(&self, _params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::QuoteResponse>;
+    async fn quote(&self, _params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::QuoteAndSwapResponse>;
     async fn swap(&self, _params: &crate::adapters::SwapParams) -> eyre::Result<crate::adapters::SwapAndAccountMetas>;
-}
-
-#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub enum AggregatorKind {
-    #[default]
-    Jupiter,
-    DFlow,
 }

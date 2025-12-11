@@ -5,7 +5,7 @@ use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{
-    Adapter, Swap,
+    Adapter, AmmSwap,
     amms::{AccountMap, Amm, AmmContext, KeyedAccount, Quote, QuoteParams, RAYDIUM_CP, SwapAndAccountMetas, SwapParams, raydium_cp},
 };
 
@@ -100,7 +100,7 @@ impl Amm for RaydiumCP {
 
     // https://solscan.io/tx/rUwLuvAuE5vKH48c3n7ZUbuUudPqdKsdcBy58gMUopYDg9yC5FbB1feg3xrEuvemBWwCbSjkmAVxqCCLthpBG1h
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> eyre::Result<SwapAndAccountMetas> {
-        let (vault_in, vault_out, mint_in, mint_out, program_in, program_out) = if swap_params.source_mint == self.state.token_0_mint {
+        let (vault_in, vault_out, mint_in, mint_out, program_in, program_out) = if swap_params.input_mint == self.state.token_0_mint {
             (self.state.token_0_vault, self.state.token_1_vault, self.state.token_0_mint, self.state.token_1_mint, self.state.token_0_program, self.state.token_1_program)
         } else {
             (self.state.token_1_vault, self.state.token_0_vault, self.state.token_1_mint, self.state.token_0_mint, self.state.token_1_program, self.state.token_0_program)
@@ -122,6 +122,6 @@ impl Amm for RaydiumCP {
             AccountMeta::new(self.state.observation_key, false),
         ];
 
-        Ok(SwapAndAccountMetas { swap: Swap::RaydiumCP, account_metas })
+        Ok(SwapAndAccountMetas { swap: AmmSwap::RaydiumCP, account_metas })
     }
 }

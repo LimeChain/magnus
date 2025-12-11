@@ -41,6 +41,7 @@ num-derive = "0.4"
 num-traits = "0.2"
 num_cpus = "1.17.0"
 num_enum = "0.7.5"
+oneshot = "0.1.11"
 #pyth-sdk = "0.8.0"
 #pyth-sdk-solana = "0.10.6"
 pyth-sdk = { git = "https://github.com/lbkolev/pyth-sdk-rs", package = "pyth-sdk" }
