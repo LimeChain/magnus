@@ -11,7 +11,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 use solana_sdk::{account::Account, clock::Clock, pubkey, pubkey::Pubkey};
 
-use crate::adapters::{Adapter, Quote, QuoteParams, SwapAndAccountMetas, SwapParams};
+use crate::{
+    AccountMap,
+    adapters::{Adapter, Quote, QuoteParams, SwapAndAccountMetas, SwapParams},
+};
 
 pub mod base_cl;
 pub mod base_cp;
@@ -34,11 +37,6 @@ pub const RAYDIUM_CL: Pubkey = pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKg
 pub const HUMIDIFI: Pubkey = pubkey!("9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp");
 pub const OBRIC_V2: Pubkey = pubkey!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
 pub const OPENBOOK_V2: Pubkey = pubkey!("opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb");
-
-// HashMap<Pubkey, Account> (aka AccountMap)
-//   -> the key is the account that we follow for updates
-//   -> the value is the account structure
-pub type AccountMap = HashMap<Pubkey, Account, ahash::RandomState>;
 
 /// ..
 pub trait Amm: Adapter + Send + Sync + Debug {

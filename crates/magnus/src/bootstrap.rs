@@ -9,8 +9,8 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::{
-    Markets, Programs,
-    adapters::amms::{AccountMap, Amm, OBRIC_V2, RAYDIUM_CP, obric_v2::ObricV2, raydium_cp::RaydiumCP},
+    AccountMap, Markets, Programs,
+    adapters::amms::{Amm, OBRIC_V2, RAYDIUM_CP, obric_v2::ObricV2, raydium_cp::RaydiumCP},
 };
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -76,18 +76,18 @@ impl Bootstrap {
     pub async fn acquire_account_map(client: &RpcClient, markets: &Markets) -> eyre::Result<AccountMap> {
         let markets_addrs: Vec<Pubkey> = markets.lock().unwrap().keys().cloned().collect();
         let accs = client.get_multiple_accounts(&markets_addrs).await?;
-        let mut z = AccountMap::new();
+        let mut acc_map = AccountMap::new();
         let mut counter = 0;
 
         accs.iter().for_each(|am| {
             if let Some(account) = am {
-                z.insert(markets_addrs[counter], account.clone());
+                acc_map.insert(markets_addrs[counter], account.clone());
             }
 
             counter += 1;
         });
 
-        Ok(z)
+        Ok(acc_map)
     }
 }
 
@@ -112,4 +112,6 @@ pub struct BootstrapMarketData {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    /* .. */
+}

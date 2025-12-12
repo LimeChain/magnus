@@ -1,3 +1,5 @@
+use solana_sdk::pubkey::Pubkey;
+
 use crate::adapters::{
     Adapter,
     amms::{Amm, HUMIDIFI},
@@ -11,7 +13,14 @@ use crate::adapters::{
  * we'll simulate the `quote` and `swap` expected by the `Amm` trait through
  * a virtual env established through litesvm.
  */
-pub struct Humidifi;
+#[derive(Clone, Debug, Default)]
+pub struct Humidifi {
+    key: Pubkey,
+    state: State,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct State {}
 
 impl Adapter for Humidifi {}
 
