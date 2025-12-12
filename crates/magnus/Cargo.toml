@@ -14,19 +14,17 @@ path = "src/main.rs"
 metrics = ["dep:metrics", "metrics-exporter-prometheus"]
 
 [dependencies]
-actix-web = "4.11.0"
-ahash = "0.8.12"
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
 arrayref = { workspace = true }
 num_enum = { workspace = true }
 
+actix-web = "4.11.0"
+ahash = "0.8.12"
 anyhow = "1.0.100"
 async-trait = "0.1.89"
 bincode = { version = "2.0.1", features = ["serde"] }
-# borsh = "1.5.7"
 borsh = "1.6.0"
-#borsh = "0.10.4"
 clap = { version = "4.5.50", features = ["derive", "env", "color", "std"] }
 enum_dispatch = "0.3.13"
 eyre = "0.6.12"
@@ -44,9 +42,7 @@ oneshot = "0.1.11"
 pyth-sdk = { git = "https://github.com/lbkolev/pyth-sdk-rs", package = "pyth-sdk" }
 pyth-sdk-solana = { git = "https://github.com/lbkolev/pyth-sdk-rs", package = "pyth-sdk-solana" }
 raydium-clmm = { git = "https://github.com/raydium-io/raydium-clmm", package = "raydium-amm-v3", features = ["no-entrypoint", "client"] }
-
 raydium-cp-swap = { git = "https://github.com/raydium-io/raydium-cp-swap", package = "raydium-cp-swap", features = ["no-entrypoint", "client"] }
-
 reqwest = { version = "0.12.24" }
 rust_decimal = { version = "1.39.0", features = ["macros"] }
 secrecy = "0.10.0"

@@ -1,7 +1,6 @@
 [workspace]
 members = [
-    "program/router",
-    "magnus"
+    "crates/*"
 ]
 resolver = "2"
 
