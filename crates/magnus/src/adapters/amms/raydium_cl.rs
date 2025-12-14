@@ -1,6 +1,7 @@
 use anchor_spl::token_interface::spl_token_metadata_interface::borsh::{BorshDeserialize, BorshSerialize};
 use anyhow::Context;
 use futures_util::StreamExt;
+use magnus_consts::amm_raydium_cl_v2;
 use reqwest::Client;
 use serde_json::json;
 use solana_client::{nonblocking::pubsub_client::PubsubClient, rpc_client::RpcClient, rpc_config::RpcTransactionLogsConfig};
@@ -14,10 +15,7 @@ use solana_sdk::{
 };
 use tracing::info;
 
-use crate::adapters::{
-    Adapter,
-    amms::{Amm, RAYDIUM_CL},
-};
+use crate::adapters::{Adapter, amms::Amm};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RaydiumCL;
@@ -26,7 +24,7 @@ impl Adapter for RaydiumCL {}
 
 impl Amm for RaydiumCL {
     fn program_id(&self) -> Pubkey {
-        RAYDIUM_CL
+        Pubkey::from_str_const(&amm_raydium_cl_v2::id().to_string())
     }
 
     fn label(&self) -> String {
@@ -129,7 +127,7 @@ impl SwapV1 {
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
-        solana_instruction::Instruction { program_id: RAYDIUM_CL, accounts, data }
+        solana_instruction::Instruction { program_id: Pubkey::from_str_const(&amm_raydium_cl_v2::id().to_string()), accounts, data }
     }
 }
 

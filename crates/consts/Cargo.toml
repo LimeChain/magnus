@@ -1,0 +1,11 @@
+[package]
+name = "magnus-consts"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+solana-sdk = { workspace = true }
+anchor-lang = { workspace = true }

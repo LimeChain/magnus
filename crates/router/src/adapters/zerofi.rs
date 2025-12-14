@@ -1,12 +1,14 @@
-use super::common::DexProcessor;
-use crate::adapters::common::{before_check, invoke_process};
-use crate::error::ErrorCode;
-use crate::{zerofi_program, HopAccounts};
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
+use magnus_consts::pmm_zerofi::{self, ACCOUNTS_LEN, ARGS_LEN};
 
-const ARGS_LEN: usize = 17;
+use super::common::DexProcessor;
+use crate::{
+    adapters::common::{before_check, invoke_process},
+    error::ErrorCode,
+    HopAccounts,
+};
 
 pub struct ZeroFiProcessor;
 impl DexProcessor for ZeroFiProcessor {}
@@ -25,7 +27,6 @@ pub struct ZeroFiAccount<'info> {
     pub token_program: Interface<'info, TokenInterface>,
     pub sysvar_instructions: &'info AccountInfo<'info>,
 }
-const ACCOUNTS_LEN: usize = 11;
 
 impl<'info> ZeroFiAccount<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
@@ -68,13 +69,10 @@ pub fn swap<'a>(
     owner_seeds: Option<&[&[&[u8]]]>,
 ) -> Result<u64> {
     msg!("Dex::ZeroFi amount_in: {}, offset: {}", amount_in, offset);
-    require!(
-        remaining_accounts.len() >= *offset + ACCOUNTS_LEN,
-        ErrorCode::InvalidAccountsLength
-    );
+    require!(remaining_accounts.len() >= *offset + ACCOUNTS_LEN, ErrorCode::InvalidAccountsLength);
 
     let mut swap_accounts = ZeroFiAccount::parse_accounts(remaining_accounts, *offset)?;
-    if swap_accounts.dex_program_id.key != &zerofi_program::id() {
+    if swap_accounts.dex_program_id.key != &pmm_zerofi::id() {
         return Err(ErrorCode::InvalidProgramId.into());
     }
     swap_accounts.pair.key().log();
@@ -82,35 +80,13 @@ pub fn swap<'a>(
     // check hop accounts & swap authority
     let swap_source_token = swap_accounts.swap_source_token.key();
     let swap_destination_token = swap_accounts.swap_destination_token.key();
-    before_check(
-        &swap_accounts.swap_authority_pubkey,
-        &swap_accounts.swap_source_token,
-        swap_destination_token,
-        hop_accounts,
-        hop,
-        proxy_swap,
-        owner_seeds,
-    )?;
+    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let (vault_info_in, vault_in, vault_info_out, vault_out) =
-        if swap_accounts.swap_source_token.mint == swap_accounts.vault_base.mint
-            && swap_accounts.swap_destination_token.mint == swap_accounts.vault_quote.mint
-        {
-            (
-                swap_accounts.vault_info_base,
-                swap_accounts.vault_base,
-                swap_accounts.vault_info_quote,
-                swap_accounts.vault_quote,
-            )
-        } else if swap_accounts.swap_source_token.mint == swap_accounts.vault_quote.mint
-            && swap_accounts.swap_destination_token.mint == swap_accounts.vault_base.mint
-        {
-            (
-                swap_accounts.vault_info_quote,
-                swap_accounts.vault_quote,
-                swap_accounts.vault_info_base,
-                swap_accounts.vault_base,
-            )
+        if swap_accounts.swap_source_token.mint == swap_accounts.vault_base.mint && swap_accounts.swap_destination_token.mint == swap_accounts.vault_quote.mint {
+            (swap_accounts.vault_info_base, swap_accounts.vault_base, swap_accounts.vault_info_quote, swap_accounts.vault_quote)
+        } else if swap_accounts.swap_source_token.mint == swap_accounts.vault_quote.mint && swap_accounts.swap_destination_token.mint == swap_accounts.vault_base.mint {
+            (swap_accounts.vault_info_quote, swap_accounts.vault_quote, swap_accounts.vault_info_base, swap_accounts.vault_base)
         } else {
             return Err(ErrorCode::InvalidTokenMint.into());
         };
@@ -146,11 +122,7 @@ pub fn swap<'a>(
         swap_accounts.sysvar_instructions.to_account_info(),
     ];
 
-    let instruction = Instruction {
-        program_id: zerofi_program::id(),
-        accounts,
-        data,
-    };
+    let instruction = Instruction { program_id: pmm_zerofi::id(), accounts, data };
 
     let amount_out = invoke_process(
         amount_in,

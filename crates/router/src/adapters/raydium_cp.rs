@@ -1,13 +1,16 @@
-use crate::adapters::common::{before_check, invoke_process};
-use crate::adapters::raydium_swap::RaydiumSwapProcessor;
-use crate::error::ErrorCode;
-use crate::{raydium_cpmm_program, HopAccounts, CPSWAP_SELECTOR};
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use arrayref::array_ref;
+use magnus_consts::amm_raydium_cp::{self, ACCOUNTS_LEN, ARGS_LEN};
 
-const ACCOUNTS_LEN: usize = 14;
-const ARGS_LEN: usize = 24;
+use crate::{
+    adapters::common::{before_check, invoke_process, DexProcessor},
+    error::ErrorCode,
+    HopAccounts, CPSWAP_SELECTOR,
+};
+
+pub struct RaydiumSwapProcessor;
+impl DexProcessor for RaydiumSwapProcessor {}
 
 pub struct RaydiumCpmmAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
@@ -74,19 +77,12 @@ pub fn swap<'a>(
     proxy_swap: bool,
     owner_seeds: Option<&[&[&[u8]]]>,
 ) -> Result<u64> {
-    msg!(
-        "Dex::RaydiumCpmmSwap amount_in: {}, offset: {}",
-        amount_in,
-        offset
-    );
+    msg!("Dex::RaydiumCpmmSwap amount_in: {}, offset: {}", amount_in, offset);
 
-    require!(
-        remaining_accounts.len() >= *offset + ACCOUNTS_LEN,
-        ErrorCode::InvalidAccountsLength
-    );
+    require!(remaining_accounts.len() >= *offset + ACCOUNTS_LEN, ErrorCode::InvalidAccountsLength);
 
     let mut swap_accounts = RaydiumCpmmAccounts::parse_accounts(remaining_accounts, *offset)?;
-    if swap_accounts.dex_program_id.key != &raydium_cpmm_program::id() {
+    if swap_accounts.dex_program_id.key != &amm_raydium_cp::id() {
         return Err(ErrorCode::InvalidProgramId.into());
     }
     // log pool address
@@ -95,15 +91,7 @@ pub fn swap<'a>(
     // check hop accounts & swap authority
     let swap_source_token = swap_accounts.swap_source_token.key();
     let swap_destination_token = swap_accounts.swap_destination_token.key();
-    before_check(
-        &swap_accounts.swap_authority_pubkey,
-        &swap_accounts.swap_source_token,
-        swap_destination_token,
-        hop_accounts,
-        hop,
-        proxy_swap,
-        owner_seeds,
-    )?;
+    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let minimum_amount_out = 0u64;
     let mut data = Vec::with_capacity(ARGS_LEN);
@@ -143,11 +131,7 @@ pub fn swap<'a>(
         swap_accounts.observation_state.to_account_info(),
     ];
 
-    let instruction = Instruction {
-        program_id: swap_accounts.dex_program_id.key(),
-        accounts,
-        data,
-    };
+    let instruction = Instruction { program_id: swap_accounts.dex_program_id.key(), accounts, data };
 
     let dex_processor = &RaydiumSwapProcessor;
     let amount_out = invoke_process(
@@ -169,8 +153,6 @@ pub fn swap<'a>(
 
 #[cfg(test)]
 mod tests {
-    use crate::SWAP_SELECTOR;
-
     use super::*;
 
     #[test]

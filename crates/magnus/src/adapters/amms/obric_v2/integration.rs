@@ -2,13 +2,14 @@ use anchor_lang::AccountDeserialize;
 use anchor_spl::token::{Mint, TokenAccount};
 use borsh::BorshDeserialize;
 use eyre::Result;
+use magnus_consts::{pmm_obric_v2, spl_token};
 use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{
     Adapter, AmmSwap,
     amms::{
-        AccountMap, Amm, AmmContext, KeyedAccount, OBRIC_V2, Quote, QuoteParams, SPL_TOKEN_PROGRAM_ID, SwapAndAccountMetas, SwapParams,
+        AccountMap, Amm, AmmContext, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams,
         obric_v2::state::{PriceFeed, SSTradingPair},
     },
 };
@@ -39,7 +40,7 @@ impl Adapter for ObricV2 {}
 
 impl Amm for ObricV2 {
     fn program_id(&self) -> Pubkey {
-        OBRIC_V2
+        Pubkey::from_str_const(&pmm_obric_v2::id().to_string())
     }
 
     fn label(&self) -> String {
@@ -183,7 +184,7 @@ impl Amm for ObricV2 {
                 AccountMeta::new_readonly(self.state.x_price_feed_id, false),
                 AccountMeta::new_readonly(self.state.y_price_feed_id, false),
                 AccountMeta::new_readonly(swap_params.token_transfer_authority, true),
-                AccountMeta::new_readonly(SPL_TOKEN_PROGRAM_ID, false),
+                AccountMeta::new_readonly(Pubkey::from_str_const(&spl_token::id().to_string()), false),
             ],
         })
     }

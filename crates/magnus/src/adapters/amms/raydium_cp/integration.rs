@@ -1,12 +1,13 @@
 use anchor_lang::AccountDeserialize;
 use anchor_spl::token::TokenAccount;
 use borsh::BorshDeserialize;
+use magnus_consts::amm_raydium_cp;
 use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{
     Adapter, AmmSwap,
-    amms::{AccountMap, Amm, AmmContext, KeyedAccount, Quote, QuoteParams, RAYDIUM_CP, SwapAndAccountMetas, SwapParams, raydium_cp},
+    amms::{AccountMap, Amm, AmmContext, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams, raydium_cp},
 };
 
 #[derive(Clone, Debug, Default)]
@@ -27,7 +28,7 @@ impl Adapter for RaydiumCP {}
 
 impl Amm for RaydiumCP {
     fn program_id(&self) -> Pubkey {
-        RAYDIUM_CP
+        Pubkey::from_str_const(&amm_raydium_cp::id().to_string())
     }
 
     fn label(&self) -> String {

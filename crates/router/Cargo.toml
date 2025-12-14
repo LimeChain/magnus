@@ -20,6 +20,7 @@ custom-heap = []
 custom-panic = []
 
 [dependencies]
+magnus-consts = { path = "../consts" }
 anchor-spl = { workspace = true }
 anchor-lang = { workspace = true,  features = ["init-if-needed", "event-cpi"]}
 arrayref = { workspace = true }

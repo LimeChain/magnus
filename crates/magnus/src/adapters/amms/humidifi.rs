@@ -1,9 +1,7 @@
+use magnus_consts::pmm_humidifi;
 use solana_sdk::pubkey::Pubkey;
 
-use crate::adapters::{
-    Adapter,
-    amms::{Amm, HUMIDIFI},
-};
+use crate::adapters::{Adapter, amms::Amm};
 
 /*
  * Few things that might be more opaque here:
@@ -26,7 +24,7 @@ impl Adapter for Humidifi {}
 
 impl Amm for Humidifi {
     fn program_id(&self) -> solana_sdk::pubkey::Pubkey {
-        HUMIDIFI
+        Pubkey::from_str_const(&pmm_humidifi::id().to_string())
     }
 
     fn label(&self) -> String {

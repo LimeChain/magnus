@@ -49,19 +49,9 @@ pub const HUMIDIFI_IX_DATA_KEY: u64 = u64::from_le_bytes([
     HUMIDIFI_IX_DATA_KEY_SEED[7],
 ]);
 
-// ******************** Limit Order ******************** //
-pub const SIGNATURE_FEE: u64 = 5000;
-pub const DEFAULT_COMPUTE_UNIT_LIMIT: u32 = 200_000;
-pub const FEE_MULTIPLIER_DENOMINATOR: u64 = 10;
-
 pub mod authority_pda {
     use anchor_lang::declare_id;
     declare_id!("HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K");
-}
-
-pub mod token_program {
-    use anchor_lang::declare_id;
-    declare_id!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 }
 
 pub mod token_2022_program {
@@ -77,40 +67,4 @@ pub mod wsol_program {
 pub mod system_program {
     use anchor_lang::declare_id;
     declare_id!("11111111111111111111111111111111");
-}
-
-// ******************** dex program ids ******************** //
-pub mod raydium_swap_program {
-    use anchor_lang::declare_id;
-    declare_id!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
-}
-
-pub mod raydium_clmm_v2_program {
-    use anchor_lang::declare_id;
-    declare_id!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
-}
-
-pub mod raydium_cpmm_program {
-    use anchor_lang::declare_id;
-    declare_id!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C");
-}
-
-pub mod obric_v2_program {
-    use anchor_lang::declare_id;
-    declare_id!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
-}
-
-pub mod solfi_v2_program {
-    use anchor_lang::declare_id;
-    declare_id!("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF");
-}
-
-pub mod zerofi_program {
-    use anchor_lang::declare_id;
-    declare_id!("ZERor4xhbUycZ6gb9ntrhqscUcZmAbQDjEAtCf4hbZY");
-}
-
-pub mod humidifi_program {
-    use anchor_lang::declare_id;
-    declare_id!("9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp");
 }

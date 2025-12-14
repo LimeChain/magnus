@@ -3357,6 +3357,8 @@ dependencies = [
  "futures-util",
  "hex",
  "litesvm",
+ "magnus-consts",
+ "magnus-router",
  "metrics",
  "metrics-exporter-prometheus",
  "num 0.4.3",
@@ -3404,6 +3406,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "magnus-consts"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "solana-sdk",
+]
+
+[[package]]
 name = "magnus-router"
 version = "0.1.0"
 dependencies = [
@@ -3411,6 +3421,7 @@ dependencies = [
  "anchor-spl",
  "arrayref",
  "bytemuck",
+ "magnus-consts",
  "num_enum",
  "solana-program 3.0.0",
 ]

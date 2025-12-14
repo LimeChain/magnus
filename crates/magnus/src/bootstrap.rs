@@ -5,12 +5,13 @@ use std::{
 };
 
 use ahash::HashMapExt;
+use magnus_consts::amm_raydium_cp;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::{
     AccountMap, Markets, Programs,
-    adapters::amms::{Amm, OBRIC_V2, RAYDIUM_CP, obric_v2::ObricV2, raydium_cp::RaydiumCP},
+    adapters::amms::{Amm, obric_v2::ObricV2, raydium_cp::RaydiumCP},
 };
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -54,14 +55,17 @@ impl Bootstrap {
 
     /// Initialises the corresponding markets based on the provided programs
     pub async fn init_markets(program_markets: Programs) -> eyre::Result<Markets> {
+        let obric_v2_id = ObricV2::default().program_id();
+        let raydium_cp_id = RaydiumCP::default().program_id();
+
         let ir: HashMap<Pubkey, Box<dyn Amm>> = program_markets
             .iter()
             .flat_map(|(program, markets)| {
                 markets.iter().map(move |market| {
                     let amm: Box<dyn Amm> = match program {
-                        &OBRIC_V2 => Box::new(ObricV2::new()),
-                        &RAYDIUM_CP => Box::new(RaydiumCP::new()),
-                        _ => unimplemented!("Market provided ({}) for an unsupported program ({})", market, program),
+                        p if *p == obric_v2_id => Box::new(ObricV2::new()),
+                        p if *p == raydium_cp_id => Box::new(RaydiumCP::new()),
+                        _ => unimplemented!("..."),
                     };
                     (*market, amm)
                 })

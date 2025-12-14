@@ -1,6 +1,6 @@
 use std::{
     boxed::Box,
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     fmt::Debug,
     sync::{
         Arc,
@@ -9,7 +9,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use solana_sdk::{account::Account, clock::Clock, pubkey, pubkey::Pubkey};
+use solana_sdk::{account::Account, clock::Clock, pubkey::Pubkey};
 
 use crate::{
     AccountMap,
@@ -20,23 +20,12 @@ pub mod base_cl;
 pub mod base_cp;
 pub mod humidifi;
 pub mod obric_v2;
-//pub mod openbook_v2;
 pub mod raydium_cl;
 pub mod raydium_cp;
 pub mod swap_state;
 
 pub use base_cl::BaseConcentratedLiquidityAmm;
 pub use base_cp::BaseConstantProductAmm;
-
-pub const SPL_TOKEN_PROGRAM_ID: Pubkey = pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
-
-pub const SOLFI_V1: Pubkey = pubkey!("SoLFiHG9TfgtdUXUjWAxi3LtvYuFyDLVhBWxdMZxyCe");
-pub const SOLFI_V2: Pubkey = pubkey!("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF");
-pub const RAYDIUM_CP: Pubkey = pubkey!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C");
-pub const RAYDIUM_CL: Pubkey = pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
-pub const HUMIDIFI: Pubkey = pubkey!("9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp");
-pub const OBRIC_V2: Pubkey = pubkey!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
-pub const OPENBOOK_V2: Pubkey = pubkey!("opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb");
 
 /// ..
 pub trait Amm: Adapter + Send + Sync + Debug {

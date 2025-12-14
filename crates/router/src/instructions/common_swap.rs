@@ -1,17 +1,15 @@
-use crate::adapters::*;
-use crate::constants::*;
-use crate::error::ErrorCode;
-use crate::processor::*;
-use crate::utils::*;
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token_interface::{Mint, TokenAccount, TokenInterface},
+};
+
+use crate::{adapters::*, constants::*, error::ErrorCode, processor::*, utils::*};
 
 #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Dex {
-    RaydiumSwap,
-    RaydiumClmmSwapV2,
-    RaydiumCpmmSwap,
+    RaydiumClV2,
+    RaydiumCp,
     ObricV2,
     SolfiV2,
     Zerofi,
@@ -71,32 +69,17 @@ pub fn common_swap<'info, T: CommonSwapProcessor<'info>>(
     fee_direction: Option<bool>,
     fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
 ) -> Result<u64> {
-    log_swap_basic_info(
-        order_id,
-        &source_mint.key(),
-        &destination_mint.key(),
-        &source_token_account.owner,
-        &destination_token_account.owner,
-    );
+    log_swap_basic_info(order_id, &source_mint.key(), &destination_mint.key(), &source_token_account.owner, &destination_token_account.owner);
 
     let before_source_balance = source_token_account.amount;
     let before_destination_balance = destination_token_account.amount;
     let min_return = args.min_return;
 
-    log_swap_balance_before(
-        before_source_balance,
-        before_destination_balance,
-        args.amount_in,
-        args.expect_amount_out,
-        min_return,
-    );
+    log_swap_balance_before(before_source_balance, before_destination_balance, args.amount_in, args.expect_amount_out, min_return);
 
     // Verify sa_authority is valid
     if sa_authority.is_some() {
-        require!(
-            sa_authority.as_ref().unwrap().key() == authority_pda::ID,
-            ErrorCode::InvalidSaAuthority
-        );
+        require!(sa_authority.as_ref().unwrap().key() == authority_pda::ID, ErrorCode::InvalidSaAuthority);
     }
 
     // get swap accounts
@@ -130,15 +113,7 @@ pub fn common_swap<'info, T: CommonSwapProcessor<'info>>(
     )?;
 
     // Common swap
-    let amount_out = execute_swap(
-        &mut source_account,
-        &mut destination_account,
-        remaining_accounts,
-        args,
-        real_amount_in,
-        source_token_sa.is_some(),
-        owner_seeds,
-    )?;
+    let amount_out = execute_swap(&mut source_account, &mut destination_account, remaining_accounts, args, real_amount_in, source_token_sa.is_some(), owner_seeds)?;
 
     // after swap hook
     swap_processor.after_swap(
@@ -162,28 +137,16 @@ pub fn common_swap<'info, T: CommonSwapProcessor<'info>>(
         0
     };
 
-    let source_token_change = before_source_balance
-        .checked_sub(after_source_balance)
-        .ok_or(ErrorCode::CalculationError)?;
+    let source_token_change = before_source_balance.checked_sub(after_source_balance).ok_or(ErrorCode::CalculationError)?;
 
     destination_token_account.reload()?;
     let after_destination_balance = destination_token_account.amount;
-    let destination_token_change = after_destination_balance
-        .checked_sub(before_destination_balance)
-        .ok_or(ErrorCode::CalculationError)?;
+    let destination_token_change = after_destination_balance.checked_sub(before_destination_balance).ok_or(ErrorCode::CalculationError)?;
 
-    log_swap_end(
-        after_source_balance,
-        after_destination_balance,
-        source_token_change,
-        destination_token_change,
-    );
+    log_swap_end(after_source_balance, after_destination_balance, source_token_change, destination_token_change);
 
     // Check min return
-    require!(
-        destination_token_change >= min_return,
-        ErrorCode::MinReturnNotReached
-    );
+    require!(destination_token_change >= min_return, ErrorCode::MinReturnNotReached);
     Ok(destination_token_change)
 }
 
@@ -213,32 +176,17 @@ pub fn common_swap_v3<'info, T: PlatformFeeV3Processor<'info>>(
     trim_account: Option<&AccountInfo<'info>>,
     acc_close_flag: bool,
 ) -> Result<u64> {
-    log_swap_basic_info(
-        order_id,
-        &source_mint.key(),
-        &destination_mint.key(),
-        &source_token_account.owner,
-        &destination_token_account.owner,
-    );
+    log_swap_basic_info(order_id, &source_mint.key(), &destination_mint.key(), &source_token_account.owner, &destination_token_account.owner);
 
     let before_source_balance = source_token_account.amount;
     let before_destination_balance = destination_token_account.amount;
     let min_return = args.min_return;
 
-    log_swap_balance_before(
-        before_source_balance,
-        before_destination_balance,
-        args.amount_in,
-        args.expect_amount_out,
-        min_return,
-    );
+    log_swap_balance_before(before_source_balance, before_destination_balance, args.amount_in, args.expect_amount_out, min_return);
 
     // Verify sa_authority is valid
     if sa_authority.is_some() {
-        require!(
-            sa_authority.as_ref().unwrap().key() == authority_pda::ID,
-            ErrorCode::InvalidSaAuthority
-        );
+        require!(sa_authority.as_ref().unwrap().key() == authority_pda::ID, ErrorCode::InvalidSaAuthority);
     }
 
     // get swap accounts
@@ -275,15 +223,7 @@ pub fn common_swap_v3<'info, T: PlatformFeeV3Processor<'info>>(
 
     // Common swap
     let expected_amount_out = args.expect_amount_out;
-    let amount_out = execute_swap(
-        &mut source_account,
-        &mut destination_account,
-        remaining_accounts,
-        args,
-        real_amount_in,
-        source_token_sa.is_some(),
-        None,
-    )?;
+    let amount_out = execute_swap(&mut source_account, &mut destination_account, remaining_accounts, args, real_amount_in, source_token_sa.is_some(), None)?;
 
     // after swap hook
     let actual_amount_out = swap_processor.after_swap(
@@ -312,37 +252,21 @@ pub fn common_swap_v3<'info, T: PlatformFeeV3Processor<'info>>(
     } else {
         0
     };
-    let source_token_change = before_source_balance
-        .checked_sub(after_source_balance)
-        .ok_or(ErrorCode::CalculationError)?;
+    let source_token_change = before_source_balance.checked_sub(after_source_balance).ok_or(ErrorCode::CalculationError)?;
 
     // destination token account has been closed in swap_tob_processor
-    let (after_destination_balance, destination_token_change) =
-        if destination_token_account.get_lamports() != 0 {
-            destination_token_account.reload()?;
-            let after_destination_balance = destination_token_account.amount;
-            (
-                after_destination_balance,
-                after_destination_balance
-                    .checked_sub(before_destination_balance)
-                    .ok_or(ErrorCode::CalculationError)?,
-            )
-        } else {
-            (actual_amount_out, actual_amount_out)
-        };
+    let (after_destination_balance, destination_token_change) = if destination_token_account.get_lamports() != 0 {
+        destination_token_account.reload()?;
+        let after_destination_balance = destination_token_account.amount;
+        (after_destination_balance, after_destination_balance.checked_sub(before_destination_balance).ok_or(ErrorCode::CalculationError)?)
+    } else {
+        (actual_amount_out, actual_amount_out)
+    };
 
-    log_swap_end(
-        after_source_balance,
-        after_destination_balance,
-        source_token_change,
-        destination_token_change,
-    );
+    log_swap_end(after_source_balance, after_destination_balance, source_token_change, destination_token_change);
 
     // Check min return
-    require!(
-        destination_token_change >= min_return,
-        ErrorCode::MinReturnNotReached
-    );
+    require!(destination_token_change >= min_return, ErrorCode::MinReturnNotReached);
     Ok(destination_token_change)
 }
 
@@ -359,31 +283,14 @@ fn execute_swap<'info>(
     let before_destination_balance = destination_account.amount;
 
     // Check SwapArgs
-    let SwapArgs {
-        amount_in: _,
-        min_return,
-        expect_amount_out,
-        amounts,
-        routes,
-    } = &args;
+    let SwapArgs { amount_in: _, min_return, expect_amount_out, amounts, routes } = &args;
     require!(real_amount_in > 0, ErrorCode::AmountInMustBeGreaterThanZero);
     require!(*min_return > 0, ErrorCode::MinReturnMustBeGreaterThanZero);
-    require!(
-        *expect_amount_out >= *min_return,
-        ErrorCode::InvalidExpectAmountOut
-    );
-    require!(
-        amounts.len() == routes.len(),
-        ErrorCode::AmountsAndRoutesMustHaveTheSameLength
-    );
+    require!(*expect_amount_out >= *min_return, ErrorCode::InvalidExpectAmountOut);
+    require!(amounts.len() == routes.len(), ErrorCode::AmountsAndRoutesMustHaveTheSameLength);
 
-    let total_amounts: u64 = amounts.iter().try_fold(0u64, |acc, &x| {
-        acc.checked_add(x).ok_or(ErrorCode::CalculationError)
-    })?;
-    require!(
-        total_amounts == real_amount_in,
-        ErrorCode::TotalAmountsMustBeEqualToAmountIn
-    );
+    let total_amounts: u64 = amounts.iter().try_fold(0u64, |acc, &x| acc.checked_add(x).ok_or(ErrorCode::CalculationError))?;
+    require!(total_amounts == real_amount_in, ErrorCode::TotalAmountsMustBeEqualToAmountIn);
 
     // Swap by Routes
     let mut offset: usize = 0;
@@ -397,83 +304,46 @@ fn execute_swap<'info>(
         for (hop, route) in hops.iter().enumerate() {
             let dexes = &route.dexes;
             let weights = &route.weights;
-            require!(
-                dexes.len() == weights.len(),
-                ErrorCode::DexesAndWeightsMustHaveTheSameLength
-            );
-            let total_weight: u8 = weights.iter().try_fold(0u8, |acc, &x| {
-                acc.checked_add(x).ok_or(ErrorCode::CalculationError)
-            })?;
+            require!(dexes.len() == weights.len(), ErrorCode::DexesAndWeightsMustHaveTheSameLength);
+            let total_weight: u8 = weights.iter().try_fold(0u8, |acc, &x| acc.checked_add(x).ok_or(ErrorCode::CalculationError))?;
             require!(total_weight == TOTAL_WEIGHT, ErrorCode::WeightsMustSumTo100);
 
             // Level 2 split handling
-            let mut hop_accounts = HopAccounts {
-                last_to_account,
-                from_account: ZERO_ADDRESS,
-                to_account: ZERO_ADDRESS,
-            };
+            let mut hop_accounts = HopAccounts { last_to_account, from_account: ZERO_ADDRESS, to_account: ZERO_ADDRESS };
             let mut amount_out: u64 = 0;
             let mut acc_fork_in: u64 = 0;
             for (index, dex) in dexes.iter().enumerate() {
                 // Calculate 2 level split amount
                 let fork_amount_in = if index == dexes.len() - 1 {
                     // The last dex, use the remaining amount_in for trading to prevent accumulation
-                    amount_in
-                        .checked_sub(acc_fork_in)
-                        .ok_or(ErrorCode::CalculationError)?
+                    amount_in.checked_sub(acc_fork_in).ok_or(ErrorCode::CalculationError)?
                 } else {
-                    let temp_amount = amount_in
-                        .checked_mul(weights[index] as u64)
-                        .ok_or(ErrorCode::CalculationError)?
-                        .checked_div(TOTAL_WEIGHT as u64)
-                        .ok_or(ErrorCode::CalculationError)?;
-                    acc_fork_in = acc_fork_in
-                        .checked_add(temp_amount)
-                        .ok_or(ErrorCode::CalculationError)?;
+                    let temp_amount =
+                        amount_in.checked_mul(weights[index] as u64).ok_or(ErrorCode::CalculationError)?.checked_div(TOTAL_WEIGHT as u64).ok_or(ErrorCode::CalculationError)?;
+                    acc_fork_in = acc_fork_in.checked_add(temp_amount).ok_or(ErrorCode::CalculationError)?;
                     temp_amount
                 };
 
                 // Execute swap
-                let fork_amount_out = distribute_swap(
-                    dex,
-                    remaining_accounts,
-                    fork_amount_in,
-                    &mut offset,
-                    &mut hop_accounts,
-                    hop,
-                    proxy_from,
-                    owner_seeds,
-                )?;
+                let fork_amount_out = distribute_swap(dex, remaining_accounts, fork_amount_in, &mut offset, &mut hop_accounts, hop, proxy_from, owner_seeds)?;
 
                 // Emit SwapEvent
-                let event = SwapEvent {
-                    dex: *dex,
-                    amount_in: fork_amount_in,
-                    amount_out: fork_amount_out,
-                };
+                let event = SwapEvent { dex: *dex, amount_in: fork_amount_in, amount_out: fork_amount_out };
                 emit!(event);
                 msg!("{:?}", event);
                 hop_accounts.from_account.log();
                 hop_accounts.to_account.log();
 
-                amount_out = amount_out
-                    .checked_add(fork_amount_out)
-                    .ok_or(ErrorCode::CalculationError)?;
+                amount_out = amount_out.checked_add(fork_amount_out).ok_or(ErrorCode::CalculationError)?;
             }
 
             if hop == 0 {
                 // CHECK: Verify the first hop's from_token must be consistent with ctx.accounts.source_token_account
-                require!(
-                    source_account.key() == hop_accounts.from_account,
-                    ErrorCode::InvalidSourceTokenAccount
-                );
+                require!(source_account.key() == hop_accounts.from_account, ErrorCode::InvalidSourceTokenAccount);
             }
             if hop == hops.len() - 1 {
                 // CHECK: Verify the last hop's to_account must be consistent with ctx.accounts.destination_token_account
-                require!(
-                    destination_account.key() == hop_accounts.to_account,
-                    ErrorCode::InvalidDestinationTokenAccount
-                );
+                require!(destination_account.key() == hop_accounts.to_account, ErrorCode::InvalidDestinationTokenAccount);
             }
             amount_in = amount_out;
             last_to_account = hop_accounts.to_account;
@@ -482,9 +352,7 @@ fn execute_swap<'info>(
 
     destination_account.reload()?;
     let after_destination_balance = destination_account.amount;
-    let amount_out = after_destination_balance
-        .checked_sub(before_destination_balance)
-        .ok_or(ErrorCode::CalculationError)?;
+    let amount_out = after_destination_balance.checked_sub(before_destination_balance).ok_or(ErrorCode::CalculationError)?;
     Ok(amount_out)
 }
 
@@ -499,22 +367,13 @@ fn distribute_swap<'a>(
     owner_seeds: Option<&[&[&[u8]]]>,
 ) -> Result<u64> {
     let swap_function = match dex {
-        Dex::RaydiumSwap => raydium_swap::swap,
-        Dex::RaydiumClmmSwapV2 => raydium_clmm_v2::swap,
-        Dex::RaydiumCpmmSwap => raydium_cpmm::swap,
+        Dex::RaydiumClV2 => raydium_cl_v2::swap,
+        Dex::RaydiumCp => raydium_cp::swap,
         Dex::ObricV2 => obric_v2::swap,
         Dex::Zerofi => zerofi::swap,
         Dex::Humidifi => humidifi::swap,
         Dex::SolfiV2 => solfi_v2::swap,
     };
 
-    swap_function(
-        remaining_accounts,
-        amount_in,
-        offset,
-        hop_accounts,
-        hop,
-        proxy_from,
-        owner_seeds,
-    )
+    swap_function(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_from, owner_seeds)
 }
