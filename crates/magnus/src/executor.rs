@@ -2,12 +2,7 @@ use std::sync::mpsc;
 
 use solana_client::nonblocking::rpc_client::RpcClient;
 
-use crate::{ExecuteSignal, adapters::SwapAndAccountMetas, solve::DispatchResponse};
-
-#[async_trait::async_trait]
-pub trait Executor: Send {
-    async fn execute<T: ExecuteSignal>(&mut self, signal: T) -> eyre::Result<()>;
-}
+use crate::{EmptyCtx, Executor, ExecutorCtx, adapters::SwapAndAccountMetas, solve::DispatchResponse};
 
 pub struct BaseExecutorCfg {
     pub client: std::sync::Arc<RpcClient>,
@@ -31,7 +26,11 @@ impl BaseExecutor {
 
 #[async_trait::async_trait]
 impl Executor for BaseExecutor {
-    async fn execute<T: ExecuteSignal>(&mut self, signal: T) -> eyre::Result<()> {
+    fn name(&self) -> &str {
+        "BaseExecutor"
+    }
+
+    async fn execute<C: ExecutorCtx>(&mut self, _: C) -> eyre::Result<()> {
         // ..
 
         while let Ok(swaps) = self.solver_rx.recv() {

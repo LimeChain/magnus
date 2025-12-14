@@ -3,14 +3,9 @@ use std::sync::mpsc::{Receiver, Sender};
 use tracing::error;
 
 use crate::{
-    ExecuteSignal, Markets, TransmitState,
+    Markets, Strategy, StrategyCtx,
     adapters::{QuoteAndSwapResponse, QuoteParams, SwapAndAccountMetas, SwapParams},
 };
-
-#[async_trait::async_trait]
-pub trait Strategy {
-    async fn compute<T: TransmitState, S: ExecuteSignal>(&mut self, state: T, signal: S) -> eyre::Result<()>;
-}
 
 pub struct SolverCfg {
     pub markets: Markets,
@@ -33,7 +28,11 @@ impl Solver {
 
 #[async_trait::async_trait]
 impl Strategy for Solver {
-    async fn compute<T: TransmitState, S: ExecuteSignal>(&mut self, state: T, signal: S) -> eyre::Result<()> {
+    fn name(&self) -> &str {
+        "BaseStrategy"
+    }
+
+    async fn compute<C: StrategyCtx>(&mut self, _: C) -> eyre::Result<()> {
         while let Ok(params) = self.rx.recv() {
             match params {
                 DispatchParams::Quote { params, response_tx } => {

@@ -7,27 +7,19 @@ use ahash::HashMapExt;
 use futures_util::StreamExt as _;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{pubkey, pubkey::Pubkey};
-use tracing::{error, info};
+use tracing::{error, field::Empty, info};
 use utoipa::openapi::info;
 use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
 use yellowstone_grpc_proto::geyser::subscribe_update;
 
 use crate::{
-    AccountMap, Markets, Programs, StateAccountToMarket, StateTransmitter, TransmitState,
+    AccountMap, EmptyCtx, Ingest, IngestCtx, Markets, Programs, StateAccountToMarket,
     adapters::amms::{Amm, AmmContext, KeyedAccount, obric_v2::integration::ObricV2, raydium_cp::RaydiumCP},
     bootstrap::MarketRaw,
     error,
     geyser_client::GeyserClientWrapped,
     helpers::{deserialize_anchor_account, geyser_acc_to_native},
 };
-
-/// ..
-#[async_trait::async_trait]
-pub trait Ingest: Send + Sync {
-    fn name(&self) -> &str;
-
-    async fn ingest(&mut self, state: StateTransmitter) -> eyre::Result<()>;
-}
 
 pub struct IngestorCfg<T: Interceptor + Send + Sync> {
     pub client_geyser: GeyserGrpcClient<T>,
@@ -63,7 +55,7 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
         "GeyserPoolStateIngestor"
     }
 
-    async fn ingest(&mut self, _: StateTransmitter) -> eyre::Result<()> {
+    async fn ingest<C: IngestCtx>(&mut self, _: C) -> eyre::Result<()> {
         info!("starting service: {}", self.name() /* self.markets.len() */,);
 
         let state_acc_to_market: StateAccountToMarket = self

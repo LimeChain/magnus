@@ -7,12 +7,12 @@ use std::sync::mpsc;
 use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
-    SignalExecutor, StateTransmitter,
+    EmptyCtx, Executor, Ingest, Strategy,
     adapters::{QuoteAndSwapResponse, QuoteParams, SwapAndAccountMetas},
     bootstrap::{Bootstrap, MarketRaw},
-    ingest::{GeyserPoolStateIngestor, Ingest, IngestorCfg},
-    payload::{BaseExecutor, BaseExecutorCfg, Executor},
-    solve::{DispatchParams, DispatchResponse, Solver, SolverCfg, Strategy},
+    executor::{BaseExecutor, BaseExecutorCfg},
+    ingest::{GeyserPoolStateIngestor, IngestorCfg},
+    solve::{DispatchParams, DispatchResponse, Solver, SolverCfg},
 };
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -125,8 +125,8 @@ async fn run(cfg: Cfg) {
      * through the geyser client
      */
 
-    let state_transmitter = StateTransmitter;
-    let signal_executor = SignalExecutor;
+    // ..
+    let bare_ctx = EmptyCtx;
 
     /*
      * - The API server sends a signal to the solver once we need a quote and/or swap executed.
@@ -143,15 +143,15 @@ async fn run(cfg: Cfg) {
 
     let _ = {
         let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), program_markets, markets: markets.clone(), account_map };
-        tokio::spawn(async move { GeyserPoolStateIngestor::new(cfg).ingest(state_transmitter).await });
+        tokio::spawn(async move { GeyserPoolStateIngestor::new(cfg).ingest(bare_ctx).await });
     };
     let _ = {
         let cfg = SolverCfg { markets, rx: request_rx, tx: response_tx };
-        tokio::spawn(async move { Solver::new(cfg).compute(state_transmitter, signal_executor).await });
+        tokio::spawn(async move { Solver::new(cfg).compute(bare_ctx).await });
     };
     let _ = {
         let cfg = BaseExecutorCfg { client: client_http, solver_rx: response_rx, executor_tx };
-        tokio::spawn(async move { BaseExecutor::new(cfg).execute(signal_executor).await });
+        tokio::spawn(async move { BaseExecutor::new(cfg).execute(bare_ctx).await });
     };
 
     let server_handle = {

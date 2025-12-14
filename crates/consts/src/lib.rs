@@ -1,12 +1,9 @@
-//! Holds some of the constants shared across the router
-//! and the offchain service
+//! Holds some of the constants shared across the router and the offchain service(s)
 //!
 //! MMs:
 //! - the program id is used to indicate the route
-//! - accounts_len - the number of accounts required (and expected) for successful swap
-//!     at a particular exchange
-//! - args_len - the number of bytes expected by a particular exchange
-//!     as instruction data
+//! - accounts_len - the number of accounts required (and expected) for successful swap at a particular exchange
+//! - args_len - the number of bytes expected as instruction data
 
 pub mod amm_raydium_cp {
     use anchor_lang::prelude::*;
