@@ -96,7 +96,7 @@ async fn run(cfg: Cfg) {
      */
 
     let client_http = std::sync::Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url));
-    let client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
+    let _client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
     let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
         .tls_config(ClientTlsConfig::new().with_native_roots())

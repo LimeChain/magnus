@@ -1,6 +1,6 @@
 //! The Uniswap invariant calculator.
 
-use solana_program::{
+use anchor_lang::solana_program::{
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };

@@ -1,10 +1,10 @@
 //! The Uniswap invariant calculator with an extra offset
 
-use arrayref::{array_mut_ref, array_ref};
-use solana_program::{
+use anchor_lang::solana_program::{
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };
+use arrayref::{array_mut_ref, array_ref};
 use spl_math::precise_number::PreciseNumber;
 
 use crate::{

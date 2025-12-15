@@ -33,7 +33,7 @@ impl Executor for BaseExecutor {
     async fn execute<C: ExecutorCtx>(&mut self, _: C) -> eyre::Result<()> {
         // ..
 
-        while let Ok(swaps) = self.solver_rx.recv() {
+        while let Ok(_swaps) = self.solver_rx.recv() {
             // ..
         }
 

@@ -46,7 +46,7 @@ pub trait IngestCtx: Send + Sync {}
 /// Trait-type of context, expected by and passable towards [`Strategy::compute`].
 pub trait StrategyCtx: Send + Sync {}
 
-/// Trait-type of context, expectedy by and passable towards [`Executor::execute`].
+/// Trait-type of context, expected by and passable towards [`Executor::execute`].
 pub trait ExecutorCtx: Send + Sync {}
 
 /// Ingest is responsible for collecting and processing raw data from external sources.

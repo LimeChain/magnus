@@ -1,5 +1,6 @@
 [toolchain]
 anchor_version = "0.32.1"
+solana_version = "3.0.13"
 
 [features]
 resolution = true
@@ -40,3 +41,6 @@ address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" # USDC_MINT
 address = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" # USDT_MINT
 [[test.validator.clone]]
 address = "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So" # mSOL_MINT
+
+[workspace]
+members = ["crates/router"]

@@ -1,7 +1,7 @@
 //! Error types
 
+use anchor_lang::solana_program::program_error::ProgramError;
 use num_derive::FromPrimitive;
-use solana_program::program_error::ProgramError;
 use thiserror::Error;
 
 /// Errors that may be returned by the TokenSwap program.

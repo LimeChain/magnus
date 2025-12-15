@@ -131,5 +131,5 @@ pub fn is_ata(account: &AccountInfo) -> bool {
 }
 
 pub fn is_system_account(account: &AccountInfo) -> bool {
-    account.owner == &crate::system_program::ID
+    account.owner == &crate::constants::system_program::ID
 }

@@ -6,11 +6,11 @@ use std::{
     sync::Arc,
 };
 
-use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
-use solana_program::{
+use anchor_lang::solana_program::{
     program_error::ProgramError,
     program_pack::{Pack, Sealed},
 };
+use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 
 use crate::curves::{
     calculator::{CurveCalculator, RoundDirection, SwapWithoutFeesResult, TradeDirection},

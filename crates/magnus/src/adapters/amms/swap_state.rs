@@ -2,13 +2,13 @@
 
 use std::sync::Arc;
 
-use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
-use enum_dispatch::enum_dispatch;
-use solana_program::{
+use anchor_lang::solana_program::{
     account_info::AccountInfo,
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };
+use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
+use enum_dispatch::enum_dispatch;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::curves::{base::SwapCurve, fees::Fees};

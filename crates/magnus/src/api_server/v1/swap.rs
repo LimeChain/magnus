@@ -1,4 +1,5 @@
 use actix_web::{HttpResponse, web};
+#[cfg(feature = "metrics")]
 use metrics::counter;
 
 use crate::api_server::{QuoteOrSwapUserParam, ServerState, sanity_check_quote_or_sim_param};
@@ -12,6 +13,7 @@ use crate::api_server::{QuoteOrSwapUserParam, ServerState, sanity_check_quote_or
     )
 )]
 pub async fn swap_handler(params: web::Query<QuoteOrSwapUserParam>, _: web::Data<ServerState>) -> HttpResponse {
+    #[cfg(feature = "metrics")]
     counter!("API HITS", "swaps" => "/api/v1/swap").increment(1);
 
     if let Err(e) = sanity_check_quote_or_sim_param(&params) {

@@ -6,7 +6,7 @@
 
 use std::convert::TryInto;
 
-use solana_program::program_pack::Pack;
+use anchor_lang::solana_program::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use spl_token::state::Account as TokenAccount;
 

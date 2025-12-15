@@ -1,11 +1,11 @@
-use super::{common_swap_v3, SwapArgs};
-use crate::processor::*;
-use crate::utils::*;
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
+
+use super::{common_swap_v3, SwapArgs};
+use crate::{processor::*, utils::*};
 
 #[derive(Accounts)]
 pub struct CommissionProxySwapAccountsV3<'info> {

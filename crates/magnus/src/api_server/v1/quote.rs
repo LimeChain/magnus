@@ -1,4 +1,5 @@
 use actix_web::{HttpResponse, web};
+#[cfg(feature = "metrics")]
 use metrics::counter;
 use serde_json::json;
 
@@ -26,6 +27,7 @@ use crate::{
     )
 )]
 pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web::Data<ServerState>) -> HttpResponse {
+    #[cfg(feature = "metrics")]
     counter!("API HITS", "quotes" => "/api/v1/quote").increment(1);
 
     let (input_mint, output_mint) = match sanity_check_quote_or_sim_param(&params) {

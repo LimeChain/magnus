@@ -1,12 +1,12 @@
 //! All fee information, to be used for validation currently
 
-use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
-use num_traits::FromPrimitive;
-use rust_decimal::Decimal;
-use solana_program::{
+use anchor_lang::solana_program::{
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };
+use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
+use num_traits::FromPrimitive;
+use rust_decimal::Decimal;
 
 use crate::error::SwapError;
 

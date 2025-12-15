@@ -1,9 +1,9 @@
 //! Simple constant price swap curve, set at init
-use arrayref::{array_mut_ref, array_ref};
-use solana_program::{
+use anchor_lang::solana_program::{
     program_error::ProgramError,
     program_pack::{IsInitialized, Pack, Sealed},
 };
+use arrayref::{array_mut_ref, array_ref};
 use spl_math::{checked_ceil_div::CheckedCeilDiv, precise_number::PreciseNumber, uint::U256};
 
 use crate::{

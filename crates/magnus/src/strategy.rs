@@ -35,9 +35,9 @@ impl Strategy for BaseStrategy {
     async fn compute<C: StrategyCtx>(&mut self, _: C) -> eyre::Result<()> {
         while let Ok(params) = self.rx.recv() {
             match params {
-                DispatchParams::Quote { params, response_tx } => {
+                DispatchParams::Quote { params: _, response_tx: _ } => {
                     // ..
-                    let resp = QuoteAndSwapResponse::default();
+                    let _resp = QuoteAndSwapResponse::default();
                     match self.tx.send(vec![SwapAndAccountMetas::default()]) {
                         Ok(_) => {}
                         Err(err) => {
@@ -46,9 +46,9 @@ impl Strategy for BaseStrategy {
                         }
                     }
                 }
-                DispatchParams::Swap { params, response_tx } => {
+                DispatchParams::Swap { params: _, response_tx: _ } => {
                     // ..
-                    let resp = QuoteAndSwapResponse::default();
+                    let _resp = QuoteAndSwapResponse::default();
                     match self.tx.send(vec![SwapAndAccountMetas::default()]) {
                         Ok(_) => {}
                         Err(err) => {

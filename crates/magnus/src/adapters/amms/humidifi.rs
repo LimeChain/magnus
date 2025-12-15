@@ -47,19 +47,19 @@ impl Amm for Humidifi {
         unimplemented!()
     }
 
-    fn update(&mut self, account_map: &super::AccountMap) -> eyre::Result<()> {
+    fn update(&mut self, _account_map: &super::AccountMap) -> eyre::Result<()> {
         unimplemented!()
     }
 
-    fn quote(&self, quote_params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::Quote> {
+    fn quote(&self, _quote_params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::Quote> {
         unimplemented!()
     }
 
-    fn get_swap_and_account_metas(&self, swap_params: &crate::adapters::SwapParams) -> eyre::Result<crate::adapters::SwapAndAccountMetas> {
+    fn get_swap_and_account_metas(&self, _swap_params: &crate::adapters::SwapParams) -> eyre::Result<crate::adapters::SwapAndAccountMetas> {
         unimplemented!()
     }
 
-    fn from_keyed_account(keyed_account: &super::KeyedAccount, amm_context: &super::AmmContext) -> eyre::Result<Self>
+    fn from_keyed_account(_keyed_account: &super::KeyedAccount, _amm_context: &super::AmmContext) -> eyre::Result<Self>
     where
         Self: Sized,
     {
