@@ -3,6 +3,8 @@ pub mod v1;
 use std::{str::FromStr, sync::mpsc};
 
 use actix_web::{App, HttpResponse, HttpServer, dev::ServerHandle, middleware::Logger, web};
+#[cfg(feature = "metrics")]
+use metrics::counter;
 use serde::Deserialize;
 use solana_sdk::pubkey::Pubkey;
 use tracing_actix_web::TracingLogger;
@@ -11,7 +13,7 @@ use utoipa_rapidoc::RapiDoc;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
-    SrcKind,
+    adapters::amms::LiquiditySource,
     api_server::v1::{quote, swap},
     strategy::DispatchParams,
 };
@@ -24,7 +26,7 @@ pub struct QuoteOrSwapUserParam {
     amount: u64,
 
     #[serde(default)]
-    src_kind: SrcKind,
+    src_kind: LiquiditySource,
 }
 
 #[derive(Debug)]
@@ -67,14 +69,15 @@ impl ApiServer {
                 .service(SwaggerUi::new("/swagger-ui/{_:.*}").url("/swagger-ui/openapi.json", openapi.clone()))
 
                 // routes - api
-                .route("/health", web::get().to(HttpResponse::Ok))
+                .route("/health", web::get().to(health_handler))
                 .service(
                     web::scope("/api").service(
                         web::scope("/v1")
-                            // trading related
+                            // core ops
                             .route("/quote", web::get().to(quote::quote_handler))
                             .route("/swap", web::get().to(swap::swap_handler))
 
+                            // miscellaneous
                             .route("/markets/supported", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // analytics?
                             .route("/markets/hotload", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets?
                         )
@@ -97,6 +100,13 @@ impl ApiServer {
     pub async fn start(self) -> std::io::Result<()> {
         self.inner.await
     }
+}
+
+pub async fn health_handler() -> HttpResponse {
+    #[cfg(feature = "metrics")]
+    counter!("API HITS", "health" => "/health").increment(1);
+
+    HttpResponse::Ok().finish()
 }
 
 fn sanity_check_quote_or_sim_param(params: &QuoteOrSwapUserParam) -> eyre::Result<(Pubkey, Pubkey)> {

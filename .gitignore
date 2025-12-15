@@ -2,6 +2,5 @@
 .zed/
 target/
 runbooks/
-idls/
 node_modules/
 txtx.yml

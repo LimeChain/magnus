@@ -15,7 +15,7 @@ use crate::{
     HopAccounts, SWAP_V2_SELECTOR, ZERO_ADDRESS,
 };
 
-pub struct RaydiumClmmV2Accounts<'info> {
+pub struct RaydiumCLV2Accounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority_pubkey: &'info AccountInfo<'info>,
     pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
@@ -37,7 +37,7 @@ pub struct RaydiumClmmV2Accounts<'info> {
     pub tick_array2: &'info AccountInfo<'info>,
 }
 
-impl<'info> RaydiumClmmV2Accounts<'info> {
+impl<'info> RaydiumCLV2Accounts<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
         let [
             dex_program_id,
@@ -96,7 +96,7 @@ pub fn swap<'a>(
     msg!("Dex::RaydiumClmmSwapV2 amount_in: {}, offset: {}", amount_in, offset);
     require!(remaining_accounts.len() >= *offset + ACCOUNTS_LEN, ErrorCode::InvalidAccountsLength);
 
-    let mut swap_accounts = RaydiumClmmV2Accounts::parse_accounts(remaining_accounts, *offset)?;
+    let mut swap_accounts = RaydiumCLV2Accounts::parse_accounts(remaining_accounts, *offset)?;
     if swap_accounts.dex_program_id.key != &amm_raydium_cl_v2::id() {
         return Err(ErrorCode::InvalidProgramId.into());
     }

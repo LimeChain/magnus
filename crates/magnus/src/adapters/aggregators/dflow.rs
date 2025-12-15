@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    SrcKind,
-    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, QuoteParams, aggregators::Aggregator},
+    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, QuoteParams, aggregators::Aggregator, amms::LiquiditySource},
     helpers::parse_amount,
 };
 
@@ -67,7 +66,7 @@ impl From<DFlowQuoteResponse> for QuoteAndSwapResponse {
         );
 
         QuoteAndSwapResponse {
-            source: SrcKind::DFlow,
+            source: LiquiditySource::DFlow,
             input_mint: dflow.input_mint,
             output_mint: dflow.output_mint,
             in_amount: parse_amount(&dflow.in_amount).unwrap_or(0),

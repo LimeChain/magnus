@@ -32,7 +32,7 @@ pub mod pmm_solfi_v2 {
 pub mod pmm_obric_v2 {
     use anchor_lang::prelude::*;
 
-    declare_id!("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF");
+    declare_id!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
     pub const ACCOUNTS_LEN: usize = 13;
     pub const ARGS_LEN: usize = 25;
 }

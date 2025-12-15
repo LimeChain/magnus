@@ -119,3 +119,20 @@ pub enum Side {
     Bid,
     Ask,
 }
+
+#[derive(Copy, Clone, Debug, Default, serde::Deserialize, serde::Serialize, utoipa::ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum LiquiditySource {
+    // get the best pricing from all aggregators
+    #[default]
+    Aggregators,
+
+    // poke a particular aggregator for quote/swap
+    Jupiter,
+    DFlow,
+
+    // get the best pricing from any of the integrated AMMs
+    // perhaps we can get even more granular here and segment into (prop|public) AMMs
+    #[serde(rename = "amms")]
+    AMMs,
+}

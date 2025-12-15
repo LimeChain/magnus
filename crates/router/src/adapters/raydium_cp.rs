@@ -12,7 +12,7 @@ use crate::{
 pub struct RaydiumSwapProcessor;
 impl DexProcessor for RaydiumSwapProcessor {}
 
-pub struct RaydiumCpmmAccounts<'info> {
+pub struct RaydiumCPAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority_pubkey: &'info AccountInfo<'info>,
     pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
@@ -30,7 +30,7 @@ pub struct RaydiumCpmmAccounts<'info> {
     pub observation_state: &'info AccountInfo<'info>,
 }
 
-impl<'info> RaydiumCpmmAccounts<'info> {
+impl<'info> RaydiumCPAccounts<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
         let [
             dex_program_id,
@@ -81,10 +81,11 @@ pub fn swap<'a>(
 
     require!(remaining_accounts.len() >= *offset + ACCOUNTS_LEN, ErrorCode::InvalidAccountsLength);
 
-    let mut swap_accounts = RaydiumCpmmAccounts::parse_accounts(remaining_accounts, *offset)?;
+    let mut swap_accounts = RaydiumCPAccounts::parse_accounts(remaining_accounts, *offset)?;
     if swap_accounts.dex_program_id.key != &amm_raydium_cp::id() {
         return Err(ErrorCode::InvalidProgramId.into());
     }
+
     // log pool address
     swap_accounts.pool_state.key().log();
 

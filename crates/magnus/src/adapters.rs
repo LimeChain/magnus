@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
 use utoipa::ToSchema;
 
-use crate::{SrcKind, adapters::amms::Side};
+use crate::adapters::amms::{LiquiditySource, Side};
 
 pub mod aggregators;
 pub mod amms;
@@ -68,7 +68,7 @@ pub enum AmmSwap {
 #[derive(Clone, Debug, Default, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteAndSwapResponse {
-    pub source: SrcKind,
+    pub source: LiquiditySource,
     pub input_mint: String,
     pub output_mint: String,
     pub in_amount: u64,

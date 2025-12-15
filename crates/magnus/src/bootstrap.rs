@@ -112,6 +112,9 @@ impl TryFrom<BootstrapMarketData> for MarketRaw {
 pub struct BootstrapMarketData {
     pubkey: String,
     owner: String,
+    // optional list of accounts to follow for updates
+    // used by amms with unknown IDLs — i.e markets whose state we cannot deserialise into
+    accounts: Option<Vec<String>>,
 }
 
 #[cfg(test)]

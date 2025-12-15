@@ -1,4 +1,3 @@
-use ahash::HashMapExt;
 use futures_util::StreamExt as _;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -6,7 +5,7 @@ use tracing::{error, info};
 use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
 use yellowstone_grpc_proto::geyser::subscribe_update;
 
-use crate::{AccountMap, Ingest, IngestCtx, Markets, Programs, StateAccountToMarket, adapters::amms::Amm, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
+use crate::{AccountMap, Ingest, IngestCtx, Markets, Programs, StateAccountToMarket, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
 
 pub struct IngestorCfg<T: Interceptor + Send + Sync> {
     pub client_geyser: GeyserGrpcClient<T>,
@@ -70,6 +69,7 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
                     {
                         let pubkey = Pubkey::try_from(account_info.pubkey.as_slice()).expect("Invalid pubkey");
                         let account = geyser_acc_to_native(&account_info);
+                        let slot = account_update.slot;
                         self.account_map.insert(pubkey, account);
 
                         // we don't need to send a msg to `Strategy` since we're sharing the underlying structure

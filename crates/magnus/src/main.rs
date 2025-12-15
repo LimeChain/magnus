@@ -4,6 +4,8 @@ use std::sync::mpsc;
 
 use clap::Parser;
 use futures_util::StreamExt as _;
+#[cfg(feature = "metrics")]
+use magnus::metrics_server;
 use magnus::{
     EmptyCtx, Executor, Ingest, Strategy,
     adapters::SwapAndAccountMetas,
@@ -12,10 +14,11 @@ use magnus::{
     bootstrap::{Bootstrap, MarketRaw},
     executor::{BaseExecutor, BaseExecutorCfg},
     ingest::{GeyserPoolStateIngestor, IngestorCfg},
-    metrics_server,
     strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, DispatchResponse},
 };
+#[cfg(feature = "metrics")]
 use metrics::describe_counter;
+#[cfg(feature = "metrics")]
 use metrics_exporter_prometheus::PrometheusBuilder;
 use secrecy::ExposeSecret;
 use solana_sdk::pubkey::Pubkey;
@@ -86,7 +89,9 @@ async fn run(cfg: Cfg) {
     let mut interrupt = signal(SignalKind::interrupt()).expect("Unable to initialise interrupt signal handler");
     let mut terminate = signal(SignalKind::terminate()).expect("Unable to initialise termination signal handler");
 
+    #[cfg(feature = "metrics")]
     let prometheus = PrometheusBuilder::new().install_recorder().expect("failed to install recorder");
+    #[cfg(feature = "metrics")]
     initialise_prometheus_metrics();
 
     /*
@@ -180,6 +185,7 @@ async fn run(cfg: Cfg) {
     }
 }
 
+#[cfg(feature = "metrics")]
 pub fn initialise_prometheus_metrics() {
     describe_counter!("API HITS", "The amount of hits experienced by the API since the server started");
     describe_counter!("API ERRORS", "The amount of errors experienced by the API since the server started");

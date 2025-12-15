@@ -10,7 +10,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use processor::*;
 
-declare_id!("6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma");
+declare_id!("H3SocRxYoShPJ9z184k9tomq2GPViDKEghyYEr1SGrXE");
 
 #[program]
 pub mod router {

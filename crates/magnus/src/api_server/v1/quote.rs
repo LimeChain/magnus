@@ -4,10 +4,10 @@ use metrics::counter;
 use serde_json::json;
 
 use crate::{
-    SrcKind,
     adapters::{
         QuoteAndSwapResponse, QuoteParams, SwapMode,
         aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
+        amms::LiquiditySource,
     },
     api_server::{QuoteOrSwapUserParam, ServerState, sanity_check_quote_or_sim_param},
     strategy::DispatchParams,
@@ -36,7 +36,7 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
     };
 
     match params.src_kind {
-        SrcKind::Aggregators => {
+        LiquiditySource::Aggregators => {
             let aggregators: Vec<Box<dyn Aggregator>> = vec![Box::new(Jupiter {}), Box::new(DFlow {})];
             let quote_param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
@@ -49,7 +49,7 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
                 None => HttpResponse::InternalServerError().json(json!({"error": "err acquiring aggregators market data"})),
             }
         }
-        SrcKind::Jupiter => {
+        LiquiditySource::Jupiter => {
             let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
             match (Jupiter {}.quote(&param).await) {
@@ -57,7 +57,7 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
                 Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
             }
         }
-        SrcKind::DFlow => {
+        LiquiditySource::DFlow => {
             let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
             match (DFlow {}.quote(&param).await) {
@@ -65,7 +65,7 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
                 Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
             }
         }
-        SrcKind::AMMs => {
+        LiquiditySource::AMMs => {
             // TODO; - we'll send a msg towards `Solve::compute`
             // and based on the provided result, we'll return the appropriate response
             let (response_tx, response_rx) = oneshot::channel();

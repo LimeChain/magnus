@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    SrcKind,
-    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, aggregators::Aggregator},
+    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, aggregators::Aggregator, amms::LiquiditySource},
     helpers::parse_amount,
 };
 
@@ -75,7 +74,7 @@ impl From<JupQuoteResp> for QuoteAndSwapResponse {
             .collect();
 
         QuoteAndSwapResponse {
-            source: SrcKind::Jupiter,
+            source: LiquiditySource::Jupiter,
             input_mint: jup.input_mint,
             output_mint: jup.output_mint,
             in_amount: parse_amount(&jup.in_amount).unwrap_or(0),
