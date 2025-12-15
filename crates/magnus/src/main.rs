@@ -144,10 +144,12 @@ async fn run(cfg: Cfg) {
         let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), program_markets, markets: markets.clone(), account_map };
         tokio::spawn(async move { GeyserPoolStateIngestor::new(cfg).ingest(bare_ctx).await });
     };
+
     {
         let cfg = BaseStrategyCfg { markets, rx: request_rx, tx: response_tx };
         tokio::spawn(async move { BaseStrategy::new(cfg).compute(bare_ctx).await });
     };
+
     {
         let cfg = BaseExecutorCfg { client: client_http, solver_rx: response_rx, executor_tx };
         tokio::spawn(async move { BaseExecutor::new(cfg).execute(bare_ctx).await });
@@ -163,13 +165,10 @@ async fn run(cfg: Cfg) {
     };
 
     #[cfg(feature = "metrics")]
-    let _ = tokio::spawn(async move {
-        metrics_server::MetricsServer::new(metrics_server::MetricsServerCfg { host: cfg.metrics_server_host, workers: cfg.metrics_server_workers, prometheus })
-            .expect("failed to create server")
-            .start()
-            .await
-            .expect("failed to start server")
-    });
+    {
+        let cfg = metrics_server::MetricsServerCfg { host: cfg.metrics_server_host, workers: cfg.metrics_server_workers, prometheus };
+        tokio::spawn(async move { metrics_server::MetricsServer::new(cfg).expect("failed to create server").start().await.expect("failed to start server") });
+    }
 
     tokio::select! {
         _ = interrupt.recv() => {

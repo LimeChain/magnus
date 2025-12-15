@@ -1,8 +1,7 @@
-use crate::common_swap;
-use crate::processor::swap_processor::SwapProcessor;
-use crate::SwapArgs;
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount};
+
+use crate::{common_swap, processor::swap_processor::SwapProcessor, SwapArgs};
 
 #[derive(Accounts)]
 pub struct SwapAccounts<'info> {

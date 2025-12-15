@@ -30,30 +30,3 @@ pub fn log_swap_end(after_source_balance: u64, after_destination_balance: u64, s
         destination_token_change
     );
 }
-
-pub fn log_commission_info(commission_direction: bool, commission_amount: u64) {
-    msg!("commission_direction: {:?}, commission_amount: {:?}", commission_direction, commission_amount);
-}
-
-pub fn log_platform_fee_info(amount: u64, fee_account: &Pubkey) {
-    msg!("platform_fee_amount: {:?}", amount);
-    fee_account.log();
-}
-
-pub fn log_trim_fee_info(amount: u64, fee_account: &Pubkey) {
-    msg!("trim_fee_amount: {:?}", amount);
-    fee_account.log();
-}
-
-pub fn log_rate_info_v3(commission_rate: u32, platform_fee_rate: Option<u16>, trim_rate: Option<u8>, commission_direction: bool, acc_close_flag: bool) {
-    let platform_fee_rate_val = platform_fee_rate.unwrap_or(0);
-    let trim_rate_val = trim_rate.unwrap_or(0);
-    msg!(
-        "commission_rate: {:?}, platform_fee_rate: {:?}, trim_rate: {:?}, commission_direction: {:?}, acc_close_flag: {:?}",
-        commission_rate,
-        platform_fee_rate_val,
-        trim_rate_val,
-        commission_direction,
-        acc_close_flag
-    );
-}

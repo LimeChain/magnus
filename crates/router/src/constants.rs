@@ -4,26 +4,9 @@ use anchor_lang::prelude::*;
 pub const SEED_SA: &[u8] = b"router";
 pub const BUMP_SA: u8 = 251;
 
-pub const COMMISSION_RATE_LIMIT: u16 = 1_000; // 10%
-pub const COMMISSION_DENOMINATOR: u64 = 10_000;
-
-pub const COMMISSION_RATE_LIMIT_V2: u32 = 100_000_000; // 10%
-pub const COMMISSION_DENOMINATOR_V2: u64 = 1_000_000_000;
-
-pub const PLATFORM_FEE_RATE_LIMIT_V2: u64 = 1_000_000_000; // 100%
-pub const PLATFORM_FEE_DENOMINATOR_V2: u64 = 1_000_000_000;
-
-pub const TRIM_RATE_LIMIT_V2: u8 = 100; // 10%
-pub const TRIM_DENOMINATOR_V2: u16 = 1_000;
-
-pub const PLATFORM_FEE_RATE_LIMIT_V3: u64 = 10_000; // 100%
-pub const PLATFORM_FEE_DENOMINATOR_V3: u64 = 10_000;
-
 pub const MAX_HOPS: usize = 3;
 pub const TOTAL_WEIGHT: u8 = 100;
 pub const SA_AUTHORITY_SEED: &[&[&[u8]]] = &[&[SEED_SA, &[BUMP_SA]]];
-pub const TOKEN_ACCOUNT_RENT: u64 = 2039280; // Token account rent (165 bytes)
-pub const MIN_SOL_ACCOUNT_RENT: u64 = 890880;
 
 // Actual amount_in lower bound ratio for post swap check
 pub const ACTUAL_IN_LOWER_BOUND_NUM: u128 = 90; // 90%
