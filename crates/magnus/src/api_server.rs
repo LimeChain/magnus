@@ -1,26 +1,24 @@
+pub mod v1;
+
 use std::{str::FromStr, sync::mpsc};
 
 use actix_web::{App, HttpResponse, HttpServer, dev::ServerHandle, middleware::Logger, web};
-use magnus::{
-    Markets, SrcKind,
-    adapters::{
-        QuoteAndSwapResponse, QuoteParams, SwapMode,
-        aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
-    },
-    solve::{DispatchParams, DispatchResponse},
-};
-use metrics::counter;
 use serde::Deserialize;
-use serde_json::json;
 use solana_sdk::pubkey::Pubkey;
 use tracing_actix_web::TracingLogger;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_rapidoc::RapiDoc;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::{
+    SrcKind,
+    api_server::v1::{quote, swap},
+    strategy::DispatchParams,
+};
+
 #[derive(Clone, Debug, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct QuoteOrSimUserParam {
+pub struct QuoteOrSwapUserParam {
     input_mint: String,
     output_mint: String,
     amount: u64,
@@ -49,7 +47,7 @@ pub struct ServerState {
 impl ApiServer {
     pub fn new(cfg: ApiServerCfg) -> eyre::Result<ApiServer> {
         #[derive(Copy, Clone, OpenApi)]
-        #[openapi(paths(quote_handler, simulate_handler))]
+        #[openapi(paths(quote::quote_handler, swap::swap_handler))]
         struct ApiDoc;
         let openapi = ApiDoc::openapi();
 
@@ -74,11 +72,11 @@ impl ApiServer {
                     web::scope("/api").service(
                         web::scope("/v1")
                             // trading related
-                            .route("/quote", web::get().to(quote_handler))
-                            .route("/simulate", web::get().to(simulate_handler))
+                            .route("/quote", web::get().to(quote::quote_handler))
+                            .route("/swap", web::get().to(swap::swap_handler))
 
                             .route("/markets/supported", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // analytics?
-                            .route("/markets/load", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets?
+                            .route("/markets/hotload", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // hotload new markets?
                         )
                 )
         })
@@ -101,7 +99,7 @@ impl ApiServer {
     }
 }
 
-fn sanity_check_quote_or_sim_param(params: &QuoteOrSimUserParam) -> eyre::Result<(Pubkey, Pubkey)> {
+fn sanity_check_quote_or_sim_param(params: &QuoteOrSwapUserParam) -> eyre::Result<(Pubkey, Pubkey)> {
     // sanity check the mints are actual valid pubkeys
     let keys = match (Pubkey::from_str(&params.input_mint).is_err(), Pubkey::from_str(&params.output_mint).is_err()) {
         (true, true) => eyre::bail!("Invalid inputMint and outputMint"),
@@ -111,91 +109,4 @@ fn sanity_check_quote_or_sim_param(params: &QuoteOrSimUserParam) -> eyre::Result
     };
 
     Ok(keys)
-}
-
-#[utoipa::path(
-    get,
-    path = "/api/v1/quote",
-    params(
-        ("inputMint" = String, description = "The input token mint addr"),
-        ("outputMint" = String, description = "The output token mint addr"),
-        ("amount" = u64, description = "The amount to quote")
-    ),
-    responses(
-        (status = 200, description = "Successfully retrieved the quote", body = QuoteAndSwapResponse),
-        (status = 500, description = "Internal Server Error")
-    )
-)]
-async fn quote_handler(params: web::Query<QuoteOrSimUserParam>, state: web::Data<ServerState>) -> HttpResponse {
-    counter!("API HITS", "quotes" => "/api/v1/quote").increment(1);
-
-    let (input_mint, output_mint) = match sanity_check_quote_or_sim_param(&params) {
-        Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
-        Ok(keys) => keys,
-    };
-
-    match params.src_kind {
-        SrcKind::Aggregators => {
-            let aggregators: Vec<Box<dyn Aggregator>> = vec![Box::new(Jupiter {}), Box::new(DFlow {})];
-            let quote_param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
-
-            let handles: Vec<_> = aggregators.into_iter().map(|agg| tokio::spawn(async move { agg.quote(&quote_param.clone()).await })).collect();
-            let res = futures::future::join_all(handles).await;
-            let best_quote = res.into_iter().filter_map(|handle_result| handle_result.ok().and_then(|quote_result| quote_result.ok())).max_by_key(|quote| quote.out_amount);
-
-            match best_quote {
-                Some(quote) => HttpResponse::Ok().json(quote),
-                None => HttpResponse::InternalServerError().json(json!({"error": "err acquiring aggregators market data"})),
-            }
-        }
-        SrcKind::Jupiter => {
-            let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
-
-            match (Jupiter {}.quote(&param).await) {
-                Ok(jup) => HttpResponse::Ok().json(jup),
-                Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
-            }
-        }
-        SrcKind::DFlow => {
-            let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
-
-            match (DFlow {}.quote(&param).await) {
-                Ok(dflow) => HttpResponse::Ok().json(dflow),
-                Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
-            }
-        }
-        SrcKind::AMMs => {
-            // TODO; - we'll send a msg towards `Solve::compute`
-            // and based on the provided result, we'll return the appropriate response
-            let (response_tx, response_rx) = oneshot::channel();
-
-            let dispatch = DispatchParams::Quote { params: QuoteParams { swap_mode: SwapMode::ExactIn, amount: params.amount, input_mint, output_mint }, response_tx };
-
-            state.request_tx.send(dispatch).expect("send invalid transmitter req");
-            let response = response_rx.recv();
-
-            match response {
-                Ok(response) => HttpResponse::Ok().json(response),
-                Err(_) => HttpResponse::InternalServerError().json(json!({"error": "no response"})),
-            }
-        }
-    }
-}
-
-#[utoipa::path(
-    post,
-    path = "/api/v1/simulate",
-    responses(
-        (status = 200, description = "Simulation successful"),
-        (status = 500, description = "Internal server error")
-    )
-)]
-pub async fn simulate_handler(params: web::Query<QuoteOrSimUserParam>, _: web::Data<ServerState>) -> HttpResponse {
-    counter!("API HITS", "simulations" => "/api/v1/simulate").increment(1);
-
-    if let Err(e) = sanity_check_quote_or_sim_param(&params) {
-        return HttpResponse::BadRequest().body(e.to_string());
-    }
-
-    HttpResponse::NotImplemented().finish()
 }

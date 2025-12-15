@@ -127,9 +127,9 @@ pub fn associate_convert_token_account<'info>(token_account: &AccountInfo<'info>
 }
 
 pub fn is_ata(account: &AccountInfo) -> bool {
-    account.as_ref().owner == &spl_token::ID || account.as_ref().owner == &crate::token_2022_program::ID
+    account.owner == &spl_token::ID || account.owner == &crate::token_2022_program::ID
 }
 
 pub fn is_system_account(account: &AccountInfo) -> bool {
-    account.as_ref().owner == &crate::system_program::ID
+    account.owner == &crate::system_program::ID
 }

@@ -23,31 +23,13 @@ impl<'info> CommonSwapProcessor<'info> for FillOrderSwapProcessor {
         destination_token_program: &Option<Interface<'info, TokenInterface>>,
         associated_token_program: &Option<Program<'info, AssociatedToken>>,
         system_program: &Option<Program<'info, System>>,
-    ) -> Result<(
-        InterfaceAccount<'info, TokenAccount>,
-        InterfaceAccount<'info, TokenAccount>,
-    )> {
-        let source_account = create_sa_if_needed(
-            payer,
-            source_mint,
-            sa_authority,
-            source_token_sa,
-            source_token_program,
-            associated_token_program,
-            system_program,
-        )?
-        .unwrap_or_else(|| source_token_account.clone());
+    ) -> Result<(InterfaceAccount<'info, TokenAccount>, InterfaceAccount<'info, TokenAccount>)> {
+        let source_account = create_sa_if_needed(payer, source_mint, sa_authority, source_token_sa, source_token_program, associated_token_program, system_program)?
+            .unwrap_or_else(|| source_token_account.clone());
 
-        let destination_account = create_sa_if_needed(
-            payer,
-            destination_mint,
-            sa_authority,
-            destination_token_sa,
-            destination_token_program,
-            associated_token_program,
-            system_program,
-        )?
-        .unwrap_or_else(|| destination_token_account.clone());
+        let destination_account =
+            create_sa_if_needed(payer, destination_mint, sa_authority, destination_token_sa, destination_token_program, associated_token_program, system_program)?
+                .unwrap_or_else(|| destination_token_account.clone());
 
         Ok((source_account, destination_account))
     }
@@ -73,26 +55,14 @@ impl<'info> CommonSwapProcessor<'info> for FillOrderSwapProcessor {
 
         // Collect fee from source token
         let mut real_amount_in = amount_in;
-        if fee_direction.is_some()
-            && fee_direction.unwrap()
-            && fee_rate.is_some()
-            && fee_token_account.is_some()
-        {
+        if fee_direction.is_some() && fee_direction.unwrap() && fee_rate.is_some() && fee_token_account.is_some() {
             let fee_rate = fee_rate.unwrap();
             let fee_token_account = fee_token_account.unwrap();
 
-            let fee_amount = amount_in
-                .checked_mul(fee_rate as u64)
-                .ok_or(LimitOrderError::MathOverflow)?
-                .checked_div(COMMISSION_DENOMINATOR_V2)
-                .ok_or(LimitOrderError::MathOverflow)?;
+            let fee_amount =
+                amount_in.checked_mul(fee_rate as u64).ok_or(LimitOrderError::MathOverflow)?.checked_div(COMMISSION_DENOMINATOR_V2).ok_or(LimitOrderError::MathOverflow)?;
 
-            msg!(
-                "fee_direction: {:?}, fee_rate: {:?}, fee_amount: {:?}",
-                true,
-                fee_rate,
-                fee_amount
-            );
+            msg!("fee_direction: {:?}, fee_rate: {:?}, fee_amount: {:?}", true, fee_rate, fee_amount);
 
             // Transfer token to fee token account
             transfer_token(
@@ -106,9 +76,7 @@ impl<'info> CommonSwapProcessor<'info> for FillOrderSwapProcessor {
                 owner_seeds,
             )?;
 
-            real_amount_in = amount_in
-                .checked_sub(fee_amount)
-                .ok_or(LimitOrderError::MathOverflow)?
+            real_amount_in = amount_in.checked_sub(fee_amount).ok_or(LimitOrderError::MathOverflow)?
         };
 
         // Transfer token to source token sa
@@ -138,10 +106,7 @@ impl<'info> CommonSwapProcessor<'info> for FillOrderSwapProcessor {
         fee_direction: Option<bool>,
         fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
     ) -> Result<()> {
-        if sa_authority.is_none()
-            || destination_token_sa.is_none()
-            || destination_token_program.is_none()
-        {
+        if sa_authority.is_none() || destination_token_sa.is_none() || destination_token_program.is_none() {
             return Ok(());
         }
         let sa_authority = sa_authority.as_ref().unwrap();
@@ -150,26 +115,14 @@ impl<'info> CommonSwapProcessor<'info> for FillOrderSwapProcessor {
 
         // Collect fee from destination token
         let mut real_amount_out = amount_out;
-        if fee_direction.is_some()
-            && !fee_direction.unwrap()
-            && fee_rate.is_some()
-            && fee_token_account.is_some()
-        {
+        if fee_direction.is_some() && !fee_direction.unwrap() && fee_rate.is_some() && fee_token_account.is_some() {
             let fee_rate = fee_rate.unwrap();
             let fee_token_account = fee_token_account.unwrap();
 
-            let fee_amount = amount_out
-                .checked_mul(fee_rate as u64)
-                .ok_or(LimitOrderError::MathOverflow)?
-                .checked_div(COMMISSION_DENOMINATOR_V2)
-                .ok_or(LimitOrderError::MathOverflow)?;
+            let fee_amount =
+                amount_out.checked_mul(fee_rate as u64).ok_or(LimitOrderError::MathOverflow)?.checked_div(COMMISSION_DENOMINATOR_V2).ok_or(LimitOrderError::MathOverflow)?;
 
-            msg!(
-                "fee_direction: {:?}, fee_rate: {:?}, fee_amount: {:?}",
-                false,
-                fee_rate,
-                fee_amount
-            );
+            msg!("fee_direction: {:?}, fee_rate: {:?}, fee_amount: {:?}", false, fee_rate, fee_amount);
 
             // Transfer token to fee token account
             transfer_token(
@@ -183,9 +136,7 @@ impl<'info> CommonSwapProcessor<'info> for FillOrderSwapProcessor {
                 owner_seeds,
             )?;
 
-            real_amount_out = amount_out
-                .checked_sub(fee_amount)
-                .ok_or(LimitOrderError::MathOverflow)?
+            real_amount_out = amount_out.checked_sub(fee_amount).ok_or(LimitOrderError::MathOverflow)?
         };
 
         transfer_token(

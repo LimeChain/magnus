@@ -5,6 +5,7 @@
 //! |3| - ..
 
 pub mod adapters;
+pub mod api_server;
 pub mod bootstrap;
 pub mod curves;
 pub mod error;
@@ -12,7 +13,9 @@ pub mod executor;
 pub mod geyser_client;
 pub mod helpers;
 pub mod ingest;
-pub mod solve;
+#[cfg(feature = "metrics")]
+pub mod metrics_server;
+pub mod strategy;
 
 /// HashMap<Pubkey, Vec<Pubkey>>
 ///
@@ -37,13 +40,13 @@ pub type StateAccountToMarket = std::collections::HashMap<solana_sdk::pubkey::Pu
 ///   -> the value is the actual account structure
 pub type AccountMap = std::collections::HashMap<solana_sdk::pubkey::Pubkey, solana_sdk::account::Account, ahash::RandomState>;
 
-/// Trait-type of context, expected by and passable towards `Ingest::ingest`.
+/// Trait-type of context, expected by and passable towards [`Ingest::ingest`].
 pub trait IngestCtx: Send + Sync {}
 
-/// Trait-type of context, expected by and passable towards `Strategy::compute`.
+/// Trait-type of context, expected by and passable towards [`Strategy::compute`].
 pub trait StrategyCtx: Send + Sync {}
 
-/// Trait-type of context, expectedy by and passable towards `Executor::execute`.
+/// Trait-type of context, expectedy by and passable towards [`Executor::execute`].
 pub trait ExecutorCtx: Send + Sync {}
 
 /// Ingest is responsible for collecting and processing raw data from external sources.
@@ -52,6 +55,20 @@ pub trait ExecutorCtx: Send + Sync {}
 /// Geyser streams, RPC endpoints, websockets, or other data sources. The ingest phase
 /// typically populates shared state (like `Markets` or `AccountMap`) that downstream
 /// strategies consume.
+///
+/// # Examples
+///
+/// ```ignore
+/// struct GeyserIngestor { /* ... */ }
+///
+/// #[async_trait::async_trait]
+/// impl Ingest for GeyserIngestor {
+///     async fn ingest<C: IngestCtx>(&mut self, ctx: C) -> eyre::Result<()> {
+///         // Subscribe to account updates, parse market data, etc.
+///         Ok(())
+///     }
+/// }
+/// ```
 #[async_trait::async_trait]
 pub trait Ingest: Send {
     fn name(&self) -> &str {
@@ -69,6 +86,20 @@ pub trait Ingest: Send {
 ///
 /// The strategy layer is decoupled from both data ingestion and execution, allowing
 /// different strategies to be composed and tested independently.
+///
+/// # Examples
+///
+/// ```ignore
+/// struct ArbStrategy { /* ... */ }
+///
+/// #[async_trait::async_trait]
+/// impl Strategy for ArbStrategy {
+///     async fn compute<C: StrategyCtx>(&mut self, ctx: C) -> eyre::Result<()> {
+///         // Analyze opportunities, send signals
+///         Ok(())
+///     }
+/// }
+/// ```
 #[async_trait::async_trait]
 pub trait Strategy: Send {
     fn name(&self) -> &str {
@@ -88,6 +119,20 @@ pub trait Strategy: Send {
 ///
 /// The executor is the final stage in the solver pipeline and is the only component
 /// that's allowed to submit txs.
+///
+/// # Examples
+///
+/// ```ignore
+/// struct JitoExecutor { /* ... */ }
+///
+/// #[async_trait::async_trait]
+/// impl Executor for JitoExecutor {
+///     async fn execute<C: ExecutorCtx>(&mut self, signal: C) -> eyre::Result<()> {
+///         // Build tx, submit bundle, monitor execution
+///         Ok(())
+///     }
+/// }
+/// ```
 #[async_trait::async_trait]
 pub trait Executor: Send {
     fn name(&self) -> &str {

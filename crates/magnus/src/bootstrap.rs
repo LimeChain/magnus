@@ -5,7 +5,6 @@ use std::{
 };
 
 use ahash::HashMapExt;
-use magnus_consts::amm_raydium_cp;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 

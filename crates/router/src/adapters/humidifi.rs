@@ -110,7 +110,7 @@ pub fn swap<'a>(
 
     swap_accounts.pool.key().log();
 
-    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_accounts.swap_destination_token.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_accounts.swap_destination_token.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let is_base_in = if swap_accounts.swap_source_token.mint == swap_accounts.pool_base_token_account.mint {
         true
@@ -137,10 +137,10 @@ pub fn swap<'a>(
     };
 
     // Extract swap_id from humidifi_param account
-    let humidifi_param_data = swap_accounts.humidifi_param.key().as_array().clone();
+    let humidifi_param_data = *swap_accounts.humidifi_param.key().as_array();
     let swap_id = u64::from_le_bytes(humidifi_param_data[0..8].try_into().map_err(|_| ErrorCode::InvalidTokenMint)?);
     let unused = &humidifi_param_data[8..32];
-    require!(unused == &[0u8; 24], ErrorCode::InvalidTokenMint);
+    require!(unused == [0u8; 24], ErrorCode::InvalidTokenMint);
 
     let swap_params: SwapParams = SwapParams { swap_id, amount_in, is_base_to_quote: !is_base_in as u8, padding: [0; 7] };
 

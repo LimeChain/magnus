@@ -1,19 +1,7 @@
 use anchor_spl::token_interface::spl_token_metadata_interface::borsh::{BorshDeserialize, BorshSerialize};
-use anyhow::Context;
 use futures_util::StreamExt;
 use magnus_consts::amm_raydium_cl_v2;
-use reqwest::Client;
-use serde_json::json;
-use solana_client::{nonblocking::pubsub_client::PubsubClient, rpc_client::RpcClient, rpc_config::RpcTransactionLogsConfig};
-use solana_commitment_config::CommitmentConfig;
-use solana_sdk::{
-    instruction::AccountMeta,
-    pubkey,
-    pubkey::Pubkey,
-    signature::{Keypair, Signer},
-    transaction::Transaction,
-};
-use tracing::info;
+use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{Adapter, amms::Amm};
 
@@ -179,11 +167,11 @@ pub fn fetch_pool_state(rpc: &solana_client::rpc_client::RpcClient, address: &so
 }
 
 pub fn fetch_all_pool_state(rpc: &solana_client::rpc_client::RpcClient, addresses: &[solana_sdk::pubkey::Pubkey]) -> Result<Vec<DecodedAccount<PoolState>>, std::io::Error> {
-    let accounts = rpc.get_multiple_accounts(addresses).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+    let accounts = rpc.get_multiple_accounts(addresses).map_err(|e| std::io::Error::other(e.to_string()))?;
     let mut decoded_accounts: Vec<DecodedAccount<PoolState>> = Vec::new();
     for i in 0..addresses.len() {
         let address = addresses[i];
-        let account = accounts[i].as_ref().ok_or(std::io::Error::new(std::io::ErrorKind::Other, format!("Account not found: {}", address)))?;
+        let account = accounts[i].as_ref().ok_or(std::io::Error::other(format!("Account not found: {}", address)))?;
         let data = PoolState::from_bytes(&account.data)?;
         decoded_accounts.push(DecodedAccount { address, account: account.clone(), data });
     }

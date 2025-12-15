@@ -1,6 +1,4 @@
-pub mod api_server;
 pub mod args;
-pub mod metrics_server;
 
 use std::sync::mpsc;
 
@@ -8,11 +6,14 @@ use clap::Parser;
 use futures_util::StreamExt as _;
 use magnus::{
     EmptyCtx, Executor, Ingest, Strategy,
-    adapters::{QuoteAndSwapResponse, QuoteParams, SwapAndAccountMetas},
+    adapters::SwapAndAccountMetas,
+    api_server,
+    api_server::ApiServerCfg,
     bootstrap::{Bootstrap, MarketRaw},
     executor::{BaseExecutor, BaseExecutorCfg},
     ingest::{GeyserPoolStateIngestor, IngestorCfg},
-    solve::{DispatchParams, DispatchResponse, Solver, SolverCfg},
+    metrics_server,
+    strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, DispatchResponse},
 };
 use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusBuilder;
@@ -22,8 +23,6 @@ use tokio::signal::unix::{SignalKind, signal};
 use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
-
-use crate::api_server::ApiServerCfg;
 
 #[tokio::main]
 async fn main() {
@@ -141,15 +140,15 @@ async fn run(cfg: Cfg) {
     /* sender = Executor thread */
     let (executor_tx, _) = mpsc::channel::<DispatchResponse>();
 
-    let _ = {
+    {
         let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), program_markets, markets: markets.clone(), account_map };
         tokio::spawn(async move { GeyserPoolStateIngestor::new(cfg).ingest(bare_ctx).await });
     };
-    let _ = {
-        let cfg = SolverCfg { markets, rx: request_rx, tx: response_tx };
-        tokio::spawn(async move { Solver::new(cfg).compute(bare_ctx).await });
+    {
+        let cfg = BaseStrategyCfg { markets, rx: request_rx, tx: response_tx };
+        tokio::spawn(async move { BaseStrategy::new(cfg).compute(bare_ctx).await });
     };
-    let _ = {
+    {
         let cfg = BaseExecutorCfg { client: client_http, solver_rx: response_rx, executor_tx };
         tokio::spawn(async move { BaseExecutor::new(cfg).execute(bare_ctx).await });
     };

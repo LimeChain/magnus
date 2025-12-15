@@ -26,11 +26,7 @@ pub struct SwapAccounts<'info> {
     pub destination_mint: InterfaceAccount<'info, Mint>,
 }
 
-pub fn swap_handler<'a>(
-    ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>,
-    args: SwapArgs,
-    order_id: u64,
-) -> Result<()> {
+pub fn swap_handler<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, args: SwapArgs, order_id: u64) -> Result<()> {
     common_swap(
         &SwapProcessor,
         &ctx.accounts.payer,

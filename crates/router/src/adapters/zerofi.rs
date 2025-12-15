@@ -80,7 +80,7 @@ pub fn swap<'a>(
     // check hop accounts & swap authority
     let swap_source_token = swap_accounts.swap_source_token.key();
     let swap_destination_token = swap_accounts.swap_destination_token.key();
-    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let (vault_info_in, vault_in, vault_info_out, vault_out) =
         if swap_accounts.swap_source_token.mint == swap_accounts.vault_base.mint && swap_accounts.swap_destination_token.mint == swap_accounts.vault_quote.mint {

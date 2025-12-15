@@ -38,11 +38,7 @@ pub trait CommonCommissionProcessorV3<'info> {
     }
 }
 
-pub fn common_commission_token_swap_v3<
-    'info,
-    T: CommonSwapProcessor<'info>,
-    U: CommonCommissionProcessorV3<'info>,
->(
+pub fn common_commission_token_swap_v3<'info, T: CommonSwapProcessor<'info>, U: CommonCommissionProcessorV3<'info>>(
     swap_processor: &T,
     commission_processor: &U,
     payer: &AccountInfo<'info>,

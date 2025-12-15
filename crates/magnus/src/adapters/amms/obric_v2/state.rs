@@ -1,6 +1,6 @@
 use core::ops::Deref;
 
-use anchor_lang::prelude::{AccountDeserialize, AccountSerialize, Error, Result, error, error_code, msg};
+use anchor_lang::prelude::{AccountDeserialize, AccountSerialize, Error, Result, error, error_code};
 use borsh::{BorshDeserialize, BorshSerialize};
 use num::{integer::Roots, pow};
 use pyth_sdk::Price;
@@ -35,7 +35,7 @@ impl AccountDeserialize for PriceFeed {
 
         // Use a dummy key since the key field will be removed from the SDK
         let feed = account.to_price_feed(&PYTH_PROGRAM_ID);
-        return Ok(PriceFeed(feed));
+        Ok(PriceFeed(feed))
     }
 }
 
@@ -99,11 +99,11 @@ impl SSTradingPair {
     #[inline(never)]
     pub fn update_price(&mut self, price_x: u64, price_y: u64, x_decimals: u8, y_decimals: u8) -> Result<()> {
         let (x_deci_mult, y_deci_mult) = if x_decimals > y_decimals {
-            (1 as u64, pow(10, usize::from(x_decimals - y_decimals)))
+            (1_u64, pow(10, usize::from(x_decimals - y_decimals)))
         } else if y_decimals > x_decimals {
-            (pow(10, usize::from(y_decimals - x_decimals)), 1 as u64)
+            (pow(10, usize::from(y_decimals - x_decimals)), 1_u64)
         } else {
-            (1 as u64, 1 as u64)
+            (1_u64, 1_u64)
         };
 
         self.mult_x = price_x * x_deci_mult;

@@ -40,31 +40,13 @@ impl ProxySwapProcessor {
         destination_token_program: &Option<Interface<'info, TokenInterface>>,
         associated_token_program: &Option<Program<'info, AssociatedToken>>,
         system_program: &Option<Program<'info, System>>,
-    ) -> Result<(
-        InterfaceAccount<'info, TokenAccount>,
-        InterfaceAccount<'info, TokenAccount>,
-    )> {
-        let source_account = create_sa_if_needed(
-            payer,
-            source_mint,
-            sa_authority,
-            source_token_sa,
-            source_token_program,
-            associated_token_program,
-            system_program,
-        )?
-        .unwrap_or_else(|| source_token_account.clone());
+    ) -> Result<(InterfaceAccount<'info, TokenAccount>, InterfaceAccount<'info, TokenAccount>)> {
+        let source_account = create_sa_if_needed(payer, source_mint, sa_authority, source_token_sa, source_token_program, associated_token_program, system_program)?
+            .unwrap_or_else(|| source_token_account.clone());
 
-        let destination_account = create_sa_if_needed(
-            payer,
-            destination_mint,
-            sa_authority,
-            destination_token_sa,
-            destination_token_program,
-            associated_token_program,
-            system_program,
-        )?
-        .unwrap_or_else(|| destination_token_account.clone());
+        let destination_account =
+            create_sa_if_needed(payer, destination_mint, sa_authority, destination_token_sa, destination_token_program, associated_token_program, system_program)?
+                .unwrap_or_else(|| destination_token_account.clone());
 
         Ok((source_account, destination_account))
     }
@@ -86,16 +68,8 @@ impl ProxySwapProcessor {
         let source_token_program = source_token_program.as_ref().unwrap();
         let source_token_sa_info = source_token_sa.as_ref().unwrap().to_account_info();
         let (acc_owner, acc_mint) = unpack_token_owner_and_mint(&source_token_sa_info)?;
-        require_keys_eq!(
-            acc_owner,
-            authority_pda::ID,
-            ErrorCode::InvalidSourceTokenSa
-        );
-        require_keys_eq!(
-            acc_mint,
-            source_mint.key(),
-            ErrorCode::InvalidSourceTokenSaMint
-        );
+        require_keys_eq!(acc_owner, authority_pda::ID, ErrorCode::InvalidSourceTokenSa);
+        require_keys_eq!(acc_mint, source_mint.key(), ErrorCode::InvalidSourceTokenSaMint);
 
         transfer_token(
             payer.to_account_info(),
@@ -121,10 +95,7 @@ impl ProxySwapProcessor {
         amount_out: u64,
         owner_seeds: Option<&[&[&[u8]]]>,
     ) -> Result<()> {
-        if sa_authority.is_none()
-            || destination_token_sa.is_none()
-            || destination_token_program.is_none()
-        {
+        if sa_authority.is_none() || destination_token_sa.is_none() || destination_token_program.is_none() {
             return Ok(());
         }
 
@@ -132,16 +103,8 @@ impl ProxySwapProcessor {
         let destination_token_sa_info = destination_token_sa.as_ref().unwrap().to_account_info();
         let destination_token_program = destination_token_program.as_ref().unwrap();
         let (acc_owner, acc_mint) = unpack_token_owner_and_mint(&destination_token_sa_info)?;
-        require_keys_eq!(
-            acc_mint,
-            destination_mint.key(),
-            ErrorCode::InvalidDestinationTokenSaMint
-        );
-        require_keys_eq!(
-            acc_owner,
-            authority_pda::ID,
-            ErrorCode::InvalidSourceTokenSa
-        );
+        require_keys_eq!(acc_mint, destination_mint.key(), ErrorCode::InvalidDestinationTokenSaMint);
+        require_keys_eq!(acc_owner, authority_pda::ID, ErrorCode::InvalidSourceTokenSa);
 
         transfer_token(
             sa_authority.to_account_info(),
@@ -172,10 +135,7 @@ impl<'info> CommonSwapProcessor<'info> for ProxySwapProcessor {
         destination_token_program: &Option<Interface<'info, TokenInterface>>,
         associated_token_program: &Option<Program<'info, AssociatedToken>>,
         system_program: &Option<Program<'info, System>>,
-    ) -> Result<(
-        InterfaceAccount<'info, TokenAccount>,
-        InterfaceAccount<'info, TokenAccount>,
-    )> {
+    ) -> Result<(InterfaceAccount<'info, TokenAccount>, InterfaceAccount<'info, TokenAccount>)> {
         self.get_swap_accounts(
             payer,
             source_token_account,
@@ -205,15 +165,7 @@ impl<'info> CommonSwapProcessor<'info> for ProxySwapProcessor {
         _fee_direction: Option<bool>,
         _fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
     ) -> Result<u64> {
-        self.proxy_handle_before(
-            owner,
-            source_token_account,
-            source_token_sa,
-            source_mint,
-            source_token_program,
-            amount_in,
-            owner_seeds,
-        )?;
+        self.proxy_handle_before(owner, source_token_account, source_token_sa, source_mint, source_token_program, amount_in, owner_seeds)?;
         Ok(amount_in)
     }
 
@@ -231,15 +183,7 @@ impl<'info> CommonSwapProcessor<'info> for ProxySwapProcessor {
         _fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
     ) -> Result<()> {
         // Proxy handle after swap
-        self.proxy_handle_after(
-            sa_authority,
-            destination_token_account,
-            destination_mint,
-            destination_token_sa,
-            destination_token_program,
-            amount_out,
-            owner_seeds,
-        )?;
+        self.proxy_handle_after(sa_authority, destination_token_account, destination_mint, destination_token_sa, destination_token_program, amount_out, owner_seeds)?;
         Ok(())
     }
 }

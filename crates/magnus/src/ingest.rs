@@ -1,25 +1,12 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
-
 use ahash::HashMapExt;
 use futures_util::StreamExt as _;
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{pubkey, pubkey::Pubkey};
-use tracing::{error, field::Empty, info};
-use utoipa::openapi::info;
+use solana_sdk::pubkey::Pubkey;
+use tracing::{error, info};
 use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
 use yellowstone_grpc_proto::geyser::subscribe_update;
 
-use crate::{
-    AccountMap, EmptyCtx, Ingest, IngestCtx, Markets, Programs, StateAccountToMarket,
-    adapters::amms::{Amm, AmmContext, KeyedAccount, obric_v2::integration::ObricV2, raydium_cp::RaydiumCP},
-    bootstrap::MarketRaw,
-    error,
-    geyser_client::GeyserClientWrapped,
-    helpers::{deserialize_anchor_account, geyser_acc_to_native},
-};
+use crate::{AccountMap, Ingest, IngestCtx, Markets, Programs, StateAccountToMarket, adapters::amms::Amm, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
 
 pub struct IngestorCfg<T: Interceptor + Send + Sync> {
     pub client_geyser: GeyserGrpcClient<T>,
@@ -63,12 +50,10 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
             .lock()
             .unwrap()
             .values()
-            .into_iter()
-            .map(|market| {
+            .flat_map(|market| {
                 let accs = market.get_accounts_to_update();
                 accs.into_iter().map(|acc| (acc, market.key()))
             })
-            .flatten()
             .collect();
 
         let filter = self.client_geyser.craft_filter(state_acc_to_market.keys().map(|v| v.to_string()).collect()).await;
@@ -90,11 +75,8 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
                         // we don't need to send a msg to `Strategy` since we're sharing the underlying structure
                         let market_pubkey = state_acc_to_market.get(&pubkey).unwrap();
                         if let Some(market) = self.markets.lock().unwrap().get_mut(market_pubkey) {
-                            match market.update(&self.account_map) {
-                                Ok(_) => {
-                                    info!("recv update")
-                                }
-                                Err(_) => {}
+                            if let Ok(_) = market.update(&self.account_map) {
+                                info!("recv update")
                             }
                         }
                     }

@@ -91,7 +91,7 @@ pub fn swap<'a>(
     // check hop accounts & swap authority
     let swap_source_token = swap_accounts.swap_source_token.key();
     let swap_destination_token = swap_accounts.swap_destination_token.key();
-    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let minimum_amount_out = 0u64;
     let mut data = Vec::with_capacity(ARGS_LEN);

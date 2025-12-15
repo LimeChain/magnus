@@ -2,7 +2,7 @@ use std::sync::mpsc;
 
 use solana_client::nonblocking::rpc_client::RpcClient;
 
-use crate::{EmptyCtx, Executor, ExecutorCtx, adapters::SwapAndAccountMetas, solve::DispatchResponse};
+use crate::{Executor, ExecutorCtx, adapters::SwapAndAccountMetas, strategy::DispatchResponse};
 
 pub struct BaseExecutorCfg {
     pub client: std::sync::Arc<RpcClient>,

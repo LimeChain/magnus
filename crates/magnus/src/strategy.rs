@@ -7,27 +7,27 @@ use crate::{
     adapters::{QuoteAndSwapResponse, QuoteParams, SwapAndAccountMetas, SwapParams},
 };
 
-pub struct SolverCfg {
+pub struct BaseStrategyCfg {
     pub markets: Markets,
     pub rx: Receiver<DispatchParams>,
     pub tx: Sender<Vec<SwapAndAccountMetas>>,
 }
 
 #[derive(Debug)]
-pub struct Solver {
+pub struct BaseStrategy {
     markets: Markets,
     rx: Receiver<DispatchParams>,
     tx: Sender<Vec<SwapAndAccountMetas>>,
 }
 
-impl Solver {
-    pub fn new(cfg: SolverCfg) -> Self {
-        Solver { markets: cfg.markets, rx: cfg.rx, tx: cfg.tx }
+impl BaseStrategy {
+    pub fn new(cfg: BaseStrategyCfg) -> Self {
+        BaseStrategy { markets: cfg.markets, rx: cfg.rx, tx: cfg.tx }
     }
 }
 
 #[async_trait::async_trait]
-impl Strategy for Solver {
+impl Strategy for BaseStrategy {
     fn name(&self) -> &str {
         "BaseStrategy"
     }

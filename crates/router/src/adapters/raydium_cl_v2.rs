@@ -107,7 +107,7 @@ pub fn swap<'a>(
     // check hop accounts & swap authority
     let swap_source_token = swap_accounts.swap_source_token.key();
     let swap_destination_token = swap_accounts.swap_destination_token.key();
-    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let is_base_input = true;
     let sqrt_price_limit_x64 = 0u128;

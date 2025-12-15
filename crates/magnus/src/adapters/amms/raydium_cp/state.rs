@@ -1,11 +1,5 @@
-use core::ops::Deref;
-
-use anchor_lang::prelude::{AccountDeserialize, AccountSerialize, Error, Result, error, error_code, msg};
 use borsh::{BorshDeserialize, BorshSerialize};
-use num::{integer::Roots, pow};
-use pyth_sdk::Price;
-use pyth_sdk_solana::state::{GenericPriceAccount, load_price_account};
-use solana_sdk::{pubkey, pubkey::Pubkey};
+use solana_sdk::pubkey::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Default)]
 pub struct State {
