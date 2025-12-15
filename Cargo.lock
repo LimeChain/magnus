@@ -3582,6 +3582,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "magnus-router-client"
+version = "0.1.0"
+dependencies = [
+ "borsh 1.6.0",
+ "num-derive 0.4.2",
+ "num-traits",
+ "serde",
+ "solana-account-info 3.1.0",
+ "solana-cpi 3.1.0",
+ "solana-instruction 3.0.0",
+ "solana-program-error 3.0.0",
+ "solana-pubkey 4.0.0",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "matchers"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

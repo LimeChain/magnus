@@ -1,0 +1,16 @@
+{
+  "idl": "target/idl/router.json",
+  "before": [],
+  "scripts": {
+    "rust": {
+      "from": "@codama/renderers-rust",
+      "args": [
+        "crates/router-client/src",
+        {
+          "crateFolder": "crates/router-client",
+          "formatCode": true
+        }
+      ]
+    }
+  }
+}
