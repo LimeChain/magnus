@@ -45,9 +45,6 @@ pub fn swap_handler<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, args: Sw
         ctx.remaining_accounts,
         args,
         order_id,
-        None,
-        None,
-        None,
     )?;
     Ok(())
 }

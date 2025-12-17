@@ -3508,6 +3508,7 @@ dependencies = [
  "borsh 1.6.0",
  "clap",
  "criterion",
+ "ed25519-dalek",
  "enum_dispatch",
  "eyre",
  "futures",

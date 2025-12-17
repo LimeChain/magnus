@@ -79,6 +79,7 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
 yellowstone-grpc-client = "10.1.1"
 yellowstone-grpc-proto = "10.1.1"
 litesvm = "0.8.2"
+ed25519-dalek = "2.2.0"
 
 [dev-dependencies]
 criterion = "0.7.0"

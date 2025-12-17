@@ -65,9 +65,6 @@ pub fn common_swap<'info, T: CommonSwapProcessor<'info>>(
     remaining_accounts: &'info [AccountInfo<'info>],
     args: SwapArgs,
     order_id: u64,
-    fee_rate: Option<u32>,
-    fee_direction: Option<bool>,
-    fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
 ) -> Result<u64> {
     log_swap_basic_info(order_id, &source_mint.key(), &destination_mint.key(), &source_token_account.owner, &destination_token_account.owner);
 
@@ -99,35 +96,13 @@ pub fn common_swap<'info, T: CommonSwapProcessor<'info>>(
     )?;
 
     // before swap hook
-    let real_amount_in = swap_processor.before_swap(
-        owner,
-        source_token_account,
-        source_mint,
-        source_token_sa,
-        source_token_program,
-        args.amount_in,
-        owner_seeds,
-        fee_rate,
-        fee_direction,
-        fee_token_account,
-    )?;
+    let real_amount_in = swap_processor.before_swap(owner, source_token_account, source_mint, source_token_sa, source_token_program, args.amount_in, owner_seeds)?;
 
     // Common swap
     let amount_out = execute_swap(&mut source_account, &mut destination_account, remaining_accounts, args, real_amount_in, source_token_sa.is_some(), owner_seeds)?;
 
     // after swap hook
-    swap_processor.after_swap(
-        sa_authority,
-        destination_token_account,
-        destination_mint,
-        destination_token_sa,
-        destination_token_program,
-        amount_out,
-        Some(SA_AUTHORITY_SEED),
-        fee_rate,
-        fee_direction,
-        fee_token_account,
-    )?;
+    swap_processor.after_swap(sa_authority, destination_token_account, destination_mint, destination_token_sa, destination_token_program, amount_out, Some(SA_AUTHORITY_SEED))?;
 
     // source token account has been closed in pumpfun buy
     let after_source_balance = if source_token_account.get_lamports() != 0 {

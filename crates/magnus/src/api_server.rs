@@ -1,33 +1,19 @@
 pub mod v1;
 
-use std::{str::FromStr, sync::mpsc};
+use std::sync::mpsc;
 
 use actix_web::{App, HttpResponse, HttpServer, dev::ServerHandle, middleware::Logger, web};
 #[cfg(feature = "metrics")]
 use metrics::counter;
-use serde::Deserialize;
-use solana_sdk::pubkey::Pubkey;
 use tracing_actix_web::TracingLogger;
-use utoipa::{OpenApi, ToSchema};
+use utoipa::OpenApi;
 use utoipa_rapidoc::RapiDoc;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
-    adapters::amms::LiquiditySource,
     api_server::v1::{quote, swap},
     strategy::DispatchParams,
 };
-
-#[derive(Clone, Debug, Deserialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct QuoteOrSwapUserParam {
-    input_mint: String,
-    output_mint: String,
-    amount: u64,
-
-    #[serde(default)]
-    src_kind: LiquiditySource,
-}
 
 #[derive(Debug)]
 pub struct ApiServerCfg {
@@ -107,16 +93,4 @@ pub async fn health_handler() -> HttpResponse {
     counter!("API HITS", "health" => "/health").increment(1);
 
     HttpResponse::Ok().finish()
-}
-
-fn sanity_check_quote_or_sim_param(params: &QuoteOrSwapUserParam) -> eyre::Result<(Pubkey, Pubkey)> {
-    // sanity check the mints are actual valid pubkeys
-    let keys = match (Pubkey::from_str(&params.input_mint).is_err(), Pubkey::from_str(&params.output_mint).is_err()) {
-        (true, true) => eyre::bail!("Invalid inputMint and outputMint"),
-        (true, _) => eyre::bail!("Invalid inputMint"),
-        (_, true) => eyre::bail!("Invalid outputMint"),
-        _ => (Pubkey::from_str(&params.input_mint)?, Pubkey::from_str(&params.output_mint)?),
-    };
-
-    Ok(keys)
 }

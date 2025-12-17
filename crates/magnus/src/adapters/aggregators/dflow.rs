@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, QuoteParams, aggregators::Aggregator, amms::LiquiditySource},
+    adapters::{Adapter, IntQuoteResponse, PlanItem, QuoteParams, aggregators::Aggregator, amms::Target},
     helpers::parse_amount,
 };
 
@@ -13,11 +13,11 @@ impl Adapter for DFlow {}
 
 #[async_trait::async_trait]
 impl Aggregator for DFlow {
-    async fn quote(&self, params: &QuoteParams) -> eyre::Result<crate::adapters::QuoteAndSwapResponse> {
+    async fn quote(&self, params: &QuoteParams) -> eyre::Result<crate::adapters::IntQuoteResponse> {
         let url = format!("{}/quote?inputMint={}&outputMint={}&amount={}", API_URL, params.input_mint, params.output_mint, params.amount);
 
         let resp: DFlowQuoteResponse = reqwest::get(&url).await?.json().await?;
-        let quote = QuoteAndSwapResponse::from(resp);
+        let quote = IntQuoteResponse::from(resp);
 
         Ok(quote)
     }
@@ -48,7 +48,7 @@ pub struct DFlowQuoteResponse {
     pub route_plan: Vec<DFlowRoutePlanItem>,
 }
 
-impl From<DFlowQuoteResponse> for QuoteAndSwapResponse {
+impl From<DFlowQuoteResponse> for IntQuoteResponse {
     fn from(dflow: DFlowQuoteResponse) -> Self {
         let route_plan = Some(
             dflow
@@ -65,8 +65,8 @@ impl From<DFlowQuoteResponse> for QuoteAndSwapResponse {
                 .collect(),
         );
 
-        QuoteAndSwapResponse {
-            source: LiquiditySource::DFlow,
+        IntQuoteResponse {
+            source: Target::DFlow,
             input_mint: dflow.input_mint,
             output_mint: dflow.output_mint,
             in_amount: parse_amount(&dflow.in_amount).unwrap_or(0),

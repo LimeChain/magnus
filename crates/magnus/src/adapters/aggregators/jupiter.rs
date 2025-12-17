@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    adapters::{Adapter, PlanItem, QuoteAndSwapResponse, aggregators::Aggregator, amms::LiquiditySource},
+    adapters::{Adapter, PlanItem, IntQuoteResponse, aggregators::Aggregator, amms::Target},
     helpers::parse_amount,
 };
 
@@ -13,11 +13,11 @@ impl Adapter for Jupiter {}
 
 #[async_trait::async_trait]
 impl Aggregator for Jupiter {
-    async fn quote(&self, params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::QuoteAndSwapResponse> {
+    async fn quote(&self, params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::IntQuoteResponse> {
         let url = format!("{}/ultra/v1/order?inputMint={}&outputMint={}&amount={}", API_URL, params.input_mint, params.output_mint, params.amount);
 
         let resp: JupQuoteResp = reqwest::get(&url).await?.json().await?;
-        let quote = crate::adapters::QuoteAndSwapResponse::from(resp);
+        let quote = crate::adapters::IntQuoteResponse::from(resp);
 
         Ok(quote)
     }
@@ -58,7 +58,7 @@ pub struct JupQuoteResp {
     pub route_plan: Vec<JupRoutePlanItem>,
 }
 
-impl From<JupQuoteResp> for QuoteAndSwapResponse {
+impl From<JupQuoteResp> for IntQuoteResponse {
     fn from(jup: JupQuoteResp) -> Self {
         let route_plan = jup
             .route_plan
@@ -73,8 +73,8 @@ impl From<JupQuoteResp> for QuoteAndSwapResponse {
             })
             .collect();
 
-        QuoteAndSwapResponse {
-            source: LiquiditySource::Jupiter,
+        IntQuoteResponse {
+            source: Target::Jupiter,
             input_mint: jup.input_mint,
             output_mint: jup.output_mint,
             in_amount: parse_amount(&jup.in_amount).unwrap_or(0),

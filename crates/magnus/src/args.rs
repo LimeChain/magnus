@@ -11,9 +11,6 @@ pub struct Args {
     #[arg(long, env = "HTTP_URL", default_value = "http://127.0.0.1:8899")]
     pub http_url: SecretString,
 
-    #[arg(long, env = "WS_URL", default_value = "ws://127.0.0.1:8900")]
-    pub ws_url: SecretString,
-
     #[arg(long, env = "YELLOWSTONE_URL")]
     pub yellowstone_url: Option<SecretString>,
 

@@ -1,3 +1,6 @@
+use std::{fmt::Debug, str::FromStr};
+
+use litesvm::LiteSVM;
 use magnus_consts::pmm_humidifi;
 use solana_sdk::pubkey::Pubkey;
 
@@ -11,16 +14,32 @@ use crate::adapters::{Adapter, amms::Amm};
  * we'll simulate the `quote` and `swap` expected by the `Amm` trait through
  * a virtual env established through litesvm.
  */
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct Humidifi {
     key: Pubkey,
-    state: State,
+    involved_accounts: Vec<Pubkey>,
+    svm: LiteSVM,
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct State {}
-
 impl Adapter for Humidifi {}
+
+impl Humidifi {
+    pub fn new(key: Pubkey, involved_accounts: Vec<String>) -> Humidifi {
+        // we'll need a proper way to setup the SVM such that
+        // the router & humidifi programs are loaded, as well as the current acc
+        // info
+        // let svm = LiteSVM::new().with_default_programs();
+
+        let involved_accounts = involved_accounts.iter().map(|v| Pubkey::from_str(v).unwrap()).collect();
+        Humidifi { key, involved_accounts, ..Humidifi::default() }
+    }
+}
+
+impl std::fmt::Debug for Humidifi {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("Humidifi | key {} | involved accounts - {:?}", self.key, self.involved_accounts))
+    }
+}
 
 impl Amm for Humidifi {
     fn program_id(&self) -> solana_sdk::pubkey::Pubkey {
@@ -32,23 +51,28 @@ impl Amm for Humidifi {
     }
 
     fn get_accounts_len(&self) -> usize {
-        11
+        pmm_humidifi::ACCOUNTS_LEN
     }
 
     fn key(&self) -> solana_sdk::pubkey::Pubkey {
-        unimplemented!()
+        self.key
     }
 
     fn get_reserve_mints(&self) -> Vec<solana_sdk::pubkey::Pubkey> {
-        unimplemented!()
+        // we don't store (nor know) the reserve mints
+        // nevertheless we can still simulate locally
+        vec![]
     }
 
     fn get_accounts_to_update(&self) -> Vec<solana_sdk::pubkey::Pubkey> {
-        unimplemented!()
+        self.involved_accounts.clone()
     }
 
     fn update(&mut self, _account_map: &super::AccountMap) -> eyre::Result<()> {
-        unimplemented!()
+        /*
+         * Since there's no way to keep state for a particular AMM
+         */
+        Ok(())
     }
 
     fn quote(&self, _quote_params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::Quote> {
@@ -67,6 +91,6 @@ impl Amm for Humidifi {
     }
 
     fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
-        unimplemented!()
+        Box::new(self.clone())
     }
 }

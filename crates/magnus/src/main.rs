@@ -9,12 +9,11 @@ use magnus::metrics_server;
 use magnus::{
     EmptyCtx, Executor, Ingest, Strategy,
     adapters::SwapAndAccountMetas,
-    api_server,
-    api_server::ApiServerCfg,
+    api_server::{self, ApiServerCfg},
     bootstrap::{Bootstrap, MarketRaw},
     executor::{BaseExecutor, BaseExecutorCfg},
     ingest::{GeyserPoolStateIngestor, IngestorCfg},
-    strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, DispatchResponse},
+    strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, DispatchResponse, WrappedSwapAndAccountMetas},
 };
 #[cfg(feature = "metrics")]
 use metrics::describe_counter;
@@ -42,7 +41,6 @@ async fn main() {
 
     let cfg = Cfg {
         http_url: args.http_url.expose_secret().into(),
-        ws_url: args.ws_url.expose_secret().into(),
         yellowstone_url: args.yellowstone_url.map(|v| v.expose_secret().into()),
         yellowstone_x_token: args.yellowstone_x_token.map(|v| v.expose_secret().into()),
         bootstrap_file: args.bootstrap_file,
@@ -57,7 +55,6 @@ async fn main() {
 
 pub struct Cfg {
     http_url: String,
-    ws_url: String,
     yellowstone_url: Option<String>,
     yellowstone_x_token: Option<String>,
     bootstrap_file: Option<String>,
@@ -101,7 +98,6 @@ async fn run(cfg: Cfg) {
      */
 
     let client_http = std::sync::Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url));
-    let _client_ws = solana_client::nonblocking::pubsub_client::PubsubClient::new(&cfg.ws_url).await.expect("unable to create websocket client");
     let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
         .tls_config(ClientTlsConfig::new().with_native_roots())
@@ -113,17 +109,16 @@ async fn run(cfg: Cfg) {
         .await
         .expect("unable to connect");
 
-    let markets_raw = match &cfg.bootstrap_file {
+    let bootstrap = match &cfg.bootstrap_file {
         Some(file) => Bootstrap::ingest_from_file(file).expect("unable to ingest from file"),
         None => Bootstrap::ingest_from_jupiter().await.expect("unable to ingest from jupiter"),
     };
 
-    let programs = Bootstrap::get_program_markets(&markets_raw);
-    let markets = Bootstrap::init_markets(programs).await.expect("unable to initialise markets");
+    let programs = Bootstrap::get_program_markets(&bootstrap);
+    let markets = Bootstrap::init_markets(programs, &bootstrap.markets_raw).await.expect("unable to initialise markets");
     let account_map = Bootstrap::acquire_account_map(&client_http, &markets).await.expect("unable to acquire account map");
 
-    let program_markets = Bootstrap::get_program_markets(&markets_raw);
-    info!("{:#?}", markets);
+    let program_markets = Bootstrap::get_program_markets(&bootstrap);
 
     /* prior spawning the ingestor, we'll need to ensure that the current state is actually fetched
      * through the geyser client
@@ -141,9 +136,7 @@ async fn run(cfg: Cfg) {
     /* sender == API server | receiver = Solver thread */
     let (request_tx, request_rx) = mpsc::channel::<DispatchParams>();
     /* sender = Solver thread | receiver = Executor thread */
-    let (response_tx, response_rx) = mpsc::channel::<Vec<SwapAndAccountMetas>>();
-    /* sender = Executor thread */
-    let (executor_tx, _) = mpsc::channel::<DispatchResponse>();
+    let (response_tx, response_rx) = mpsc::channel::<WrappedSwapAndAccountMetas>();
 
     {
         let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), program_markets, markets: markets.clone(), account_map };
@@ -151,12 +144,12 @@ async fn run(cfg: Cfg) {
     };
 
     {
-        let cfg = BaseStrategyCfg { markets, rx: request_rx, tx: response_tx };
+        let cfg = BaseStrategyCfg { markets, api_server_rx: request_rx, tx: response_tx };
         tokio::spawn(async move { BaseStrategy::new(cfg).compute(bare_ctx).await });
     };
 
     {
-        let cfg = BaseExecutorCfg { client: client_http, solver_rx: response_rx, executor_tx };
+        let cfg = BaseExecutorCfg { client: client_http, solver_rx: response_rx };
         tokio::spawn(async move { BaseExecutor::new(cfg).execute(bare_ctx).await });
     };
 

@@ -1,9 +1,9 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, signature::Signature, transaction::Transaction};
 use utoipa::ToSchema;
 
-use crate::adapters::amms::{LiquiditySource, Side};
+use crate::adapters::amms::{Side, Target};
 
 pub mod aggregators;
 pub mod amms;
@@ -28,7 +28,7 @@ pub struct QuoteParams {
     pub output_mint: Pubkey,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct SwapParams {
     pub swap_mode: SwapMode,
     pub amount: u64,
@@ -59,16 +59,15 @@ pub struct SwapAndAccountMetas {
 pub enum AmmSwap {
     #[default]
     RaydiumCP,
+    RaydiumCLV2,
     ObricV2,
-    OpenbookV2 {
-        side: Side,
-    },
+    Humidifi,
 }
 
 #[derive(Clone, Debug, Default, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct QuoteAndSwapResponse {
-    pub source: LiquiditySource,
+pub struct IntQuoteResponse {
+    pub source: Target,
     pub input_mint: String,
     pub output_mint: String,
     pub in_amount: u64,
@@ -76,7 +75,18 @@ pub struct QuoteAndSwapResponse {
     pub route_plan: Option<Vec<PlanItem>>,
 }
 
-// -- internal
+// todo: implement the ToSchema
+#[derive(Clone, Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IntSwapResponse {
+    pub source: Target,
+    pub input_mint: String,
+    pub output_mint: String,
+    pub in_amount: u64,
+    pub signature: String, //Signature,
+    pub route_plan: Option<Vec<PlanItem>>,
+}
+
 #[derive(Clone, Debug, Default, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct PlanItem {

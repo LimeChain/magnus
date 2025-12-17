@@ -32,9 +32,6 @@ pub trait CommonSwapProcessor<'info> {
         _source_token_program: &Option<Interface<'info, TokenInterface>>,
         _amount_in: u64,
         _owner_seeds: Option<&[&[&[u8]]]>,
-        _fee_rate: Option<u32>,
-        _fee_direction: Option<bool>,
-        _fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
     ) -> Result<u64> {
         Ok(_amount_in)
     }
@@ -48,9 +45,6 @@ pub trait CommonSwapProcessor<'info> {
         _destination_token_program: &Option<Interface<'info, TokenInterface>>,
         _amount_out: u64,
         _owner_seeds: Option<&[&[&[u8]]]>,
-        _fee_rate: Option<u32>,
-        _fee_direction: Option<bool>,
-        _fee_token_account: Option<&InterfaceAccount<'info, TokenAccount>>,
     ) -> Result<()> {
         Ok(())
     }

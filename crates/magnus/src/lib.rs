@@ -19,7 +19,7 @@ pub mod strategy;
 
 /// HashMap<Pubkey, Vec<Pubkey>>
 ///
-///   -> the key is the program (amm) addr
+///   -> the key is the program (amm/pmm) addr
 ///   -> the value is a list of the markets we collect data for
 pub type Programs = std::collections::HashMap<solana_sdk::pubkey::Pubkey, Vec<solana_sdk::pubkey::Pubkey>>;
 

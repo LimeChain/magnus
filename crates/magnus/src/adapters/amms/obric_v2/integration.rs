@@ -48,7 +48,7 @@ impl Amm for ObricV2 {
     }
 
     fn get_accounts_len(&self) -> usize {
-        12
+        pmm_obric_v2::ACCOUNTS_LEN
     }
 
     fn key(&self) -> Pubkey {
@@ -56,7 +56,7 @@ impl Amm for ObricV2 {
     }
 
     fn get_reserve_mints(&self) -> Vec<Pubkey> {
-        [self.state.mint_x, self.state.mint_y].to_vec()
+        vec![self.state.mint_x, self.state.mint_y]
     }
 
     fn has_dynamic_accounts(&self) -> bool {

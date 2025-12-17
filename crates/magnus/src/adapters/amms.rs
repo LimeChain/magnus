@@ -20,7 +20,7 @@ pub mod base_cl;
 pub mod base_cp;
 pub mod humidifi;
 pub mod obric_v2;
-pub mod raydium_cl;
+pub mod raydium_cl_v2;
 pub mod raydium_cp;
 pub mod swap_state;
 
@@ -122,9 +122,8 @@ pub enum Side {
 
 #[derive(Copy, Clone, Debug, Default, serde::Deserialize, serde::Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
-pub enum LiquiditySource {
+pub enum Target {
     // get the best pricing from all aggregators
-    #[default]
     Aggregators,
 
     // poke a particular aggregator for quote/swap
@@ -134,5 +133,6 @@ pub enum LiquiditySource {
     // get the best pricing from any of the integrated AMMs
     // perhaps we can get even more granular here and segment into (prop|public) AMMs
     #[serde(rename = "amms")]
+    #[default]
     AMMs,
 }

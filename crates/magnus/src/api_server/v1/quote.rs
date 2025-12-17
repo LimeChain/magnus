@@ -1,17 +1,33 @@
+use std::str::FromStr;
+
 use actix_web::{HttpResponse, web};
 #[cfg(feature = "metrics")]
 use metrics::counter;
+use serde::Deserialize;
 use serde_json::json;
+use solana_sdk::pubkey::Pubkey;
+use utoipa::ToSchema;
 
 use crate::{
     adapters::{
-        QuoteAndSwapResponse, QuoteParams, SwapMode,
+        IntQuoteResponse, QuoteParams, SwapMode,
         aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
-        amms::LiquiditySource,
+        amms::Target,
     },
-    api_server::{QuoteOrSwapUserParam, ServerState, sanity_check_quote_or_sim_param},
-    strategy::DispatchParams,
+    api_server::ServerState,
+    strategy::{DispatchParams, DispatchResponse},
 };
+
+#[derive(Clone, Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct QuoteUserParam {
+    input_mint: String,
+    output_mint: String,
+    amount: u64,
+
+    #[serde(default)]
+    target: Target,
+}
 
 #[utoipa::path(
     get,
@@ -22,21 +38,21 @@ use crate::{
         ("amount" = u64, description = "The amount to quote")
     ),
     responses(
-        (status = 200, description = "Successfully retrieved the quote", body = QuoteAndSwapResponse),
+        (status = 200, description = "Successfully retrieved the quote", body = IntQuoteResponse),
         (status = 500, description = "Internal Server Error")
     )
 )]
-pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web::Data<ServerState>) -> HttpResponse {
+pub async fn quote_handler(params: web::Query<QuoteUserParam>, state: web::Data<ServerState>) -> HttpResponse {
     #[cfg(feature = "metrics")]
     counter!("API HITS", "quotes" => "/api/v1/quote").increment(1);
 
-    let (input_mint, output_mint) = match sanity_check_quote_or_sim_param(&params) {
+    let (input_mint, output_mint) = match sanity_check_quote_param(&params) {
         Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
         Ok(keys) => keys,
     };
 
-    match params.src_kind {
-        LiquiditySource::Aggregators => {
+    match params.target {
+        Target::Aggregators => {
             let aggregators: Vec<Box<dyn Aggregator>> = vec![Box::new(Jupiter {}), Box::new(DFlow {})];
             let quote_param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
@@ -49,7 +65,7 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
                 None => HttpResponse::InternalServerError().json(json!({"error": "err acquiring aggregators market data"})),
             }
         }
-        LiquiditySource::Jupiter => {
+        Target::Jupiter => {
             let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
             match (Jupiter {}.quote(&param).await) {
@@ -57,7 +73,7 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
                 Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
             }
         }
-        LiquiditySource::DFlow => {
+        Target::DFlow => {
             let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
 
             match (DFlow {}.quote(&param).await) {
@@ -65,15 +81,15 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
                 Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
             }
         }
-        LiquiditySource::AMMs => {
-            // TODO; - we'll send a msg towards `Solve::compute`
-            // and based on the provided result, we'll return the appropriate response
-            let (response_tx, response_rx) = oneshot::channel();
+        Target::AMMs => {
+            let (response_tx, response_rx) = oneshot::channel::<DispatchResponse>();
 
             let dispatch = DispatchParams::Quote { params: QuoteParams { swap_mode: SwapMode::ExactIn, amount: params.amount, input_mint, output_mint }, response_tx };
 
             state.request_tx.send(dispatch).expect("send invalid transmitter req");
+            tracing::info!("sent from `API Server::quote` towards `Strategy`");
             let response = response_rx.recv();
+            tracing::info!("received from `Strategy`");
 
             match response {
                 Ok(response) => HttpResponse::Ok().json(response),
@@ -81,4 +97,16 @@ pub async fn quote_handler(params: web::Query<QuoteOrSwapUserParam>, state: web:
             }
         }
     }
+}
+
+fn sanity_check_quote_param(params: &QuoteUserParam) -> eyre::Result<(Pubkey, Pubkey)> {
+    // sanity check the mints are actual valid pubkeys
+    let keys = match (Pubkey::from_str(&params.input_mint).is_err(), Pubkey::from_str(&params.output_mint).is_err()) {
+        (true, true) => eyre::bail!("Invalid inputMint and outputMint"),
+        (true, _) => eyre::bail!("Invalid inputMint"),
+        (_, true) => eyre::bail!("Invalid outputMint"),
+        _ => (Pubkey::from_str(&params.input_mint)?, Pubkey::from_str(&params.output_mint)?),
+    };
+
+    Ok(keys)
 }
