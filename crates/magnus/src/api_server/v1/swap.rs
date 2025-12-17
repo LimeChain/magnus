@@ -39,7 +39,7 @@ pub fn sanity_check_swap_param(_: &SwapUserParam) -> eyre::Result<()> {
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn swap_handler(params: web::Query<SwapUserParam>, state: web::Data<ServerState>) -> HttpResponse {
+pub async fn swap_handler(params: web::Json<SwapUserParam>, state: web::Data<ServerState>) -> HttpResponse {
     #[cfg(feature = "metrics")]
     counter!("API HITS", "swaps" => "/api/v1/swap").increment(1);
 

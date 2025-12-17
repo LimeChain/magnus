@@ -71,7 +71,7 @@ impl Amm for ObricV2 {
         }
     }
 
-    fn update(&mut self, accounts_map: &AccountMap) -> Result<()> {
+    fn update(&mut self, accounts_map: &AccountMap, _: Option<u64>) -> Result<()> {
         let reserve_x_data = &mut &accounts_map.get(&self.state.reserve_x).ok_or(AmmError::AccountNotFound)?.data[..];
         let reserve_y_data = &mut &accounts_map.get(&self.state.reserve_x).ok_or(AmmError::AccountNotFound)?.data[..];
         let reserve_x_token_account = &TokenAccount::try_deserialize(reserve_x_data)?;

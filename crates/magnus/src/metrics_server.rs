@@ -1,4 +1,5 @@
 use actix_web::{App, HttpResponse, HttpServer, middleware::Logger, web};
+use metrics::describe_counter;
 use metrics_exporter_prometheus::PrometheusHandle;
 
 #[derive(Debug, Clone)]
@@ -43,4 +44,9 @@ impl MetricsServer {
 
 async fn metrics(handle: web::Data<PrometheusHandle>) -> HttpResponse {
     HttpResponse::Ok().content_type("text/plain").body(handle.render())
+}
+
+pub fn initialise_prometheus_description_metrics() {
+    describe_counter!("API HITS", "The amount of hits experienced by the API since the server started");
+    describe_counter!("METRICS HITS", "The amount of hits experienced by /metrics since the (metrics) server started");
 }

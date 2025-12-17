@@ -39,7 +39,7 @@ pub trait Amm: Adapter + Send + Sync + Debug {
     fn clone_amm(&self) -> Box<dyn Amm + Send + Sync>;
     fn get_reserve_mints(&self) -> Vec<Pubkey>;
     fn get_accounts_to_update(&self) -> Vec<Pubkey>;
-    fn update(&mut self, account_map: &AccountMap) -> eyre::Result<()>;
+    fn update(&mut self, account_map: &AccountMap, slot: Option<u64>) -> eyre::Result<()>;
     fn quote(&self, quote_params: &QuoteParams) -> eyre::Result<Quote>;
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> eyre::Result<SwapAndAccountMetas>;
 

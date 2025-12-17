@@ -61,7 +61,7 @@ impl ApiServer {
                         web::scope("/v1")
                             // core ops
                             .route("/quote", web::get().to(quote::quote_handler))
-                            .route("/swap", web::get().to(swap::swap_handler))
+                            .route("/swap", web::post().to(swap::swap_handler))
 
                             // miscellaneous
                             .route("/markets/supported", web::get().to(|| async { HttpResponse::NotImplemented().finish() })) // analytics?

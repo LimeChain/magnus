@@ -5,7 +5,7 @@ use tracing::info;
 
 use crate::{
     Executor, ExecutorCtx,
-    adapters::{IntQuoteResponse, IntSwapResponse},
+    adapters::{IntQuoteResponse, IntSwapResponse, amms::Target},
     strategy::{DispatchResponse, WrappedSwapAndAccountMetas},
 };
 
@@ -35,7 +35,7 @@ impl Executor for BaseExecutor {
             info!("received by `Executor`");
             //tokio::time::sleep(Duration::from_secs(2)).await;
             match swaps.response_tx.send(DispatchResponse::Swap(IntSwapResponse {
-                source: crate::adapters::amms::Target::AMMs,
+                source: Target::AMMs,
                 input_mint: swaps.input_mint.to_string(),
                 output_mint: swaps.output_mint.to_string(),
                 ..IntSwapResponse::default()

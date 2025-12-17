@@ -3,26 +3,19 @@ pub mod args;
 use std::sync::mpsc;
 
 use clap::Parser;
-use futures_util::StreamExt as _;
 #[cfg(feature = "metrics")]
 use magnus::metrics_server;
 use magnus::{
     EmptyCtx, Executor, Ingest, Strategy,
-    adapters::SwapAndAccountMetas,
     api_server::{self, ApiServerCfg},
     bootstrap::{Bootstrap, MarketRaw},
     executor::{BaseExecutor, BaseExecutorCfg},
     ingest::{GeyserPoolStateIngestor, IngestorCfg},
-    strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, DispatchResponse, WrappedSwapAndAccountMetas},
+    strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, WrappedSwapAndAccountMetas},
 };
-#[cfg(feature = "metrics")]
-use metrics::describe_counter;
-#[cfg(feature = "metrics")]
-use metrics_exporter_prometheus::PrometheusBuilder;
 use secrecy::ExposeSecret;
-use solana_sdk::pubkey::Pubkey;
 use tokio::signal::unix::{SignalKind, signal};
-use tracing::info;
+use tracing::{debug, info};
 use tracing_subscriber::{EnvFilter, fmt::time::UtcTime};
 use yellowstone_grpc_client::{ClientTlsConfig, GeyserGrpcClient};
 
@@ -64,32 +57,14 @@ pub struct Cfg {
     metrics_server_workers: u16,
 }
 
-// ingestor, solver, sendtx
-async fn run_core_components() {}
-
-// put all optional components behind feature flags
-async fn run_components() {
-    run_core_components().await;
-
-    // api
-
-    // metrics server
-}
-
-#[derive(Clone, Debug)]
-pub struct AmmProgram {
-    owner: Pubkey,
-    markets: Vec<MarketRaw>,
-}
-
 async fn run(cfg: Cfg) {
     let mut interrupt = signal(SignalKind::interrupt()).expect("Unable to initialise interrupt signal handler");
     let mut terminate = signal(SignalKind::terminate()).expect("Unable to initialise termination signal handler");
 
     #[cfg(feature = "metrics")]
-    let prometheus = PrometheusBuilder::new().install_recorder().expect("failed to install recorder");
+    let prometheus = metrics_exporter_prometheus::PrometheusBuilder::new().install_recorder().expect("failed to install recorder");
     #[cfg(feature = "metrics")]
-    initialise_prometheus_metrics();
+    metrics_server::initialise_prometheus_description_metrics();
 
     /*
      * |1| Bootstrap proper state, either natively or via some external provider (check out `https://cache.jup.ag/markets?v=4`)
@@ -119,10 +94,7 @@ async fn run(cfg: Cfg) {
     let account_map = Bootstrap::acquire_account_map(&client_http, &markets).await.expect("unable to acquire account map");
 
     let program_markets = Bootstrap::get_program_markets(&bootstrap);
-
-    /* prior spawning the ingestor, we'll need to ensure that the current state is actually fetched
-     * through the geyser client
-     */
+    debug!("account_map: {:?}", account_map);
 
     // ..
     let bare_ctx = EmptyCtx;
@@ -176,13 +148,4 @@ async fn run(cfg: Cfg) {
             server_handle.stop(false).await;
         }
     }
-}
-
-#[cfg(feature = "metrics")]
-pub fn initialise_prometheus_metrics() {
-    describe_counter!("API HITS", "The amount of hits experienced by the API since the server started");
-    describe_counter!("API ERRORS", "The amount of errors experienced by the API since the server started");
-
-    describe_counter!("METRICS HITS", "The amount of hits experienced by /metrics since the (metrics) server started");
-    // ..
 }

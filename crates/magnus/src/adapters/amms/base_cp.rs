@@ -110,7 +110,7 @@ impl Amm for BaseConstantProductAmm {
         })
     }
 
-    fn update(&mut self, account_map: &AccountMap) -> eyre::Result<()> {
+    fn update(&mut self, account_map: &AccountMap, _slot: Option<u64>) -> eyre::Result<()> {
         let token_a_account = try_get_account_data(account_map, &self.state.token_a)?;
         let token_a_token_account = TokenAccount::unpack(token_a_account)?;
 

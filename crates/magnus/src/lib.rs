@@ -36,6 +36,7 @@ pub type Markets = std::sync::Arc<std::sync::Mutex<std::collections::HashMap<sol
 pub type StateAccountToMarket = std::collections::HashMap<solana_sdk::pubkey::Pubkey, solana_sdk::pubkey::Pubkey>;
 
 /// HashMap<Pubkey, Account> (aka AccountMap)
+///
 ///   -> the key is the account that we follow for updates
 ///   -> the value is the actual account structure
 pub type AccountMap = std::collections::HashMap<solana_sdk::pubkey::Pubkey, solana_sdk::account::Account, ahash::RandomState>;

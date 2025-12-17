@@ -37,7 +37,7 @@ impl Amm for RaydiumCLV2 {
         unimplemented!()
     }
 
-    fn update(&mut self, _account_map: &super::AccountMap) -> eyre::Result<()> {
+    fn update(&mut self, _account_map: &super::AccountMap, _: Option<u64>) -> eyre::Result<()> {
         unimplemented!()
     }
 

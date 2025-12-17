@@ -75,7 +75,7 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
                         // we don't need to send a msg to `Strategy` since we're sharing the underlying structure
                         let market_pubkey = state_acc_to_market.get(&pubkey).unwrap();
                         if let Some(market) = self.markets.lock().unwrap().get_mut(market_pubkey)
-                            && let Ok(_) = market.update(&self.account_map)
+                            && let Ok(_) = market.update(&self.account_map, Some(slot))
                         {
                             info!("recv update")
                         }

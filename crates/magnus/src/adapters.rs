@@ -40,6 +40,12 @@ pub struct SwapParams {
     pub token_transfer_authority: Pubkey,
 }
 
+impl From<QuoteParams> for SwapParams {
+    fn from(value: QuoteParams) -> Self {
+        SwapParams { swap_mode: value.swap_mode, amount: value.amount, input_mint: value.input_mint, output_mint: value.output_mint, ..Default::default() }
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Quote {
     pub in_amount: u64,

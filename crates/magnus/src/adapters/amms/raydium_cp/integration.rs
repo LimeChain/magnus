@@ -64,7 +64,7 @@ impl Amm for RaydiumCP {
         Ok(RaydiumCP { key: keyed_account.key, state, current_x: 0, current_y: 0 })
     }
 
-    fn update(&mut self, account_map: &AccountMap) -> eyre::Result<()> {
+    fn update(&mut self, account_map: &AccountMap, _: Option<u64>) -> eyre::Result<()> {
         let vault_0 = account_map.get(&self.state.token_0_vault).ok_or_else(|| eyre::eyre!("token_0_vault not found"))?;
         let vault_1 = account_map.get(&self.state.token_1_vault).ok_or_else(|| eyre::eyre!("token_1_vault not found"))?;
 

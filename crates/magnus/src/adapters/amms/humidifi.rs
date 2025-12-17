@@ -42,7 +42,7 @@ impl std::fmt::Debug for Humidifi {
 }
 
 impl Amm for Humidifi {
-    fn program_id(&self) -> solana_sdk::pubkey::Pubkey {
+    fn program_id(&self) -> Pubkey {
         Pubkey::from_str_const(&pmm_humidifi::id().to_string())
     }
 
@@ -58,7 +58,7 @@ impl Amm for Humidifi {
         self.key
     }
 
-    fn get_reserve_mints(&self) -> Vec<solana_sdk::pubkey::Pubkey> {
+    fn get_reserve_mints(&self) -> Vec<Pubkey> {
         // we don't store (nor know) the reserve mints
         // nevertheless we can still simulate locally
         vec![]
@@ -68,7 +68,7 @@ impl Amm for Humidifi {
         self.involved_accounts.clone()
     }
 
-    fn update(&mut self, _account_map: &super::AccountMap) -> eyre::Result<()> {
+    fn update(&mut self, _account_map: &super::AccountMap, _slot: Option<u64>) -> eyre::Result<()> {
         /*
          * Since there's no way to keep state for a particular AMM
          */
