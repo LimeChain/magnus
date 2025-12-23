@@ -18,20 +18,6 @@ pub const CPSWAP_SELECTOR: &[u8; 8] = &[143, 190, 90, 218, 196, 30, 51, 222];
 pub const SWAP_V2_SELECTOR: &[u8; 8] = &[43, 4, 237, 11, 26, 201, 30, 98];
 pub const ZERO_ADDRESS: Pubkey = Pubkey::new_from_array([0u8; 32]);
 
-pub const HUMIDIFI_SWAP_SELECTOR: u8 = 0x4;
-const HUMIDIFI_IX_DATA_KEY_SEED: [u8; 32] =
-    [58, 255, 47, 255, 226, 186, 235, 195, 123, 131, 245, 8, 11, 233, 132, 219, 225, 40, 79, 119, 169, 121, 169, 58, 197, 1, 122, 9, 216, 164, 149, 97];
-pub const HUMIDIFI_IX_DATA_KEY: u64 = u64::from_le_bytes([
-    HUMIDIFI_IX_DATA_KEY_SEED[0],
-    HUMIDIFI_IX_DATA_KEY_SEED[1],
-    HUMIDIFI_IX_DATA_KEY_SEED[2],
-    HUMIDIFI_IX_DATA_KEY_SEED[3],
-    HUMIDIFI_IX_DATA_KEY_SEED[4],
-    HUMIDIFI_IX_DATA_KEY_SEED[5],
-    HUMIDIFI_IX_DATA_KEY_SEED[6],
-    HUMIDIFI_IX_DATA_KEY_SEED[7],
-]);
-
 pub mod authority_pda {
     use anchor_lang::declare_id;
     declare_id!("HV1KXxWFaSeriyFvXyx48FqG9BoFbfinB8njCJonqP7K");

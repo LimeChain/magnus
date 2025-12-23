@@ -8,7 +8,7 @@ use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, HUMIDIFI_IX_DATA_KEY, HUMIDIFI_SWAP_SELECTOR,
+    HopAccounts,
 };
 
 pub struct HumidifiProcessor;
@@ -69,24 +69,6 @@ impl<'info> HumidifiAccounts<'info> {
             sysvar_instructions,
         })
     }
-
-    pub fn obfuscate_instruction_data(data: &mut [u8]) {
-        let mut qwords = data.chunks_exact_mut(8);
-        let mut pos_mask = 0_u64;
-        while let Some(qword) = qwords.next().map(|q| unsafe { &mut *q.as_mut_ptr().cast::<u64>() }) {
-            *qword ^= HUMIDIFI_IX_DATA_KEY;
-            *qword ^= pos_mask;
-            pos_mask = pos_mask.wrapping_add(0x0001_0001_0001_0001);
-        }
-        let remainder = qwords.into_remainder();
-        let mut rem = 0_u64;
-        unsafe {
-            core::ptr::copy_nonoverlapping(remainder.as_ptr(), &mut rem as *mut u64 as *mut u8, remainder.len());
-        }
-        rem ^= HUMIDIFI_IX_DATA_KEY;
-        rem ^= pos_mask;
-        unsafe { core::ptr::copy_nonoverlapping(&rem as *const u64 as *const u8, remainder.as_mut_ptr(), remainder.len()) }
-    }
 }
 
 pub fn swap<'a>(
@@ -146,8 +128,6 @@ pub fn swap<'a>(
 
     let mut data: Vec<u8> = Vec::with_capacity(ARGS_LEN);
     data.extend_from_slice(&swap_params.try_to_vec()?);
-    data.extend_from_slice(&[HUMIDIFI_SWAP_SELECTOR]);
-    HumidifiAccounts::obfuscate_instruction_data(&mut data);
 
     let accounts = vec![
         AccountMeta::new_readonly(swap_accounts.swap_authority_pubkey.key(), true),

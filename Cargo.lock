@@ -3517,6 +3517,7 @@ dependencies = [
  "litesvm",
  "magnus-consts",
  "magnus-router",
+ "magnus-router-client",
  "metrics",
  "metrics-exporter-prometheus",
  "num 0.4.3",
