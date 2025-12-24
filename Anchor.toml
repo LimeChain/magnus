@@ -2,16 +2,22 @@
 anchor_version = "0.32.1"
 solana_version = "3.1.4"
 
+[workspace]
+members = ["crates/router"]
+
 [features]
 resolution = true
 seeds = false
 skip-lint = false
 
-[programs.localnet]
-dex_solana = "6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma"
-
 [registry]
 url = "https://api.apr.dev"
+
+[programs.localnet]
+router = "F9Z9WiieTtL4giMt3eBFEsB5vmAFotLz37FWC7NcbzpT"
+
+[programs.mainnet]
+router = "F9Z9WiieTtL4giMt3eBFEsB5vmAFotLz37FWC7NcbzpT"
 
 [provider]
 cluster = "Localnet"
@@ -41,6 +47,3 @@ address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" # USDC_MINT
 address = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" # USDT_MINT
 [[test.validator.clone]]
 address = "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So" # mSOL_MINT
-
-[workspace]
-members = ["crates/router"]

@@ -1,7 +1,7 @@
 cargo-features = ["edition2024"]
 
 [package]
-name = "magnus-consts"
+name = "magnus-shared"
 version = "0.1.0"
 edition = "2024"
 
@@ -10,3 +10,4 @@ path = "src/lib.rs"
 
 [dependencies]
 anchor-lang = { workspace = true }
+magnus-router-client = { path = "../router-client" }
