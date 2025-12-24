@@ -82,4 +82,7 @@ pub enum ErrorCode {
 
     #[msg("Math overflow")]
     MathOverflow,
+
+    #[msg("Invalid Goonfi parameters")]
+    InvalidGoonfiParameters,
 }

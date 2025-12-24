@@ -3515,9 +3515,9 @@ dependencies = [
  "futures-util",
  "hex",
  "litesvm",
- "magnus-consts",
  "magnus-router",
  "magnus-router-client",
+ "magnus-shared",
  "metrics",
  "metrics-exporter-prometheus",
  "num 0.4.3",
@@ -3564,13 +3564,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "magnus-consts"
-version = "0.1.0"
-dependencies = [
- "anchor-lang 0.32.1",
-]
-
-[[package]]
 name = "magnus-router"
 version = "0.1.0"
 dependencies = [
@@ -3579,7 +3572,7 @@ dependencies = [
  "arrayref",
  "base64ct",
  "bytemuck",
- "magnus-consts",
+ "magnus-shared",
  "num_enum",
 ]
 
@@ -3597,6 +3590,14 @@ dependencies = [
  "solana-program-error 3.0.0",
  "solana-pubkey 4.0.0",
  "thiserror 2.0.17",
+]
+
+[[package]]
+name = "magnus-shared"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang 0.32.1",
+ "magnus-router-client",
 ]
 
 [[package]]

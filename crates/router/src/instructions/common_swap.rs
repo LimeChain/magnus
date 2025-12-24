@@ -3,18 +3,9 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
+use magnus_shared::{authority_pda, Dex};
 
 use crate::{adapters::*, constants::*, error::ErrorCode, processor::*, utils::*};
-
-#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug)]
-pub enum Dex {
-    RaydiumClV2,
-    RaydiumCp,
-    ObricV2,
-    SolfiV2,
-    Zerofi,
-    Humidifi,
-}
 
 #[derive(Debug)]
 pub struct HopAccounts {

@@ -11,7 +11,7 @@ use anchor_spl::{
     token_2022::{self, Token2022},
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
-use magnus_consts::spl_token;
+use magnus_shared::{spl_token, system_program, token_2022_program};
 
 use crate::error::ErrorCode;
 
@@ -127,9 +127,9 @@ pub fn associate_convert_token_account<'info>(token_account: &AccountInfo<'info>
 }
 
 pub fn is_ata(account: &AccountInfo) -> bool {
-    account.owner == &spl_token::ID || account.owner == &crate::token_2022_program::ID
+    account.owner == &spl_token::ID || account.owner == &token_2022_program::ID
 }
 
 pub fn is_system_account(account: &AccountInfo) -> bool {
-    account.owner == &crate::constants::system_program::ID
+    account.owner == &system_program::ID
 }

@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::{token::Token, token_interface::TokenAccount};
 use arrayref::array_ref;
-use magnus_consts::pmm_obric_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::pmm_obric_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use super::common::DexProcessor;
 use crate::{
@@ -81,6 +81,7 @@ pub fn swap<'a>(
     if swap_accounts.dex_program_id.key != &pmm_obric_v2::id() {
         return Err(ErrorCode::InvalidProgramId.into());
     }
+
     // log pool address
     swap_accounts.trading_pair.key().log();
 

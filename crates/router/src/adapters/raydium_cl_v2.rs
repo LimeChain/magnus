@@ -4,7 +4,7 @@ use anchor_spl::{
     token_interface::{Mint, Token2022, TokenAccount},
 };
 use arrayref::array_ref;
-use magnus_consts::amm_raydium_cl_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::amm_raydium_cl_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use crate::{
     adapters::{
@@ -12,7 +12,7 @@ use crate::{
         raydium_cp::RaydiumSwapProcessor,
     },
     error::ErrorCode,
-    HopAccounts, SWAP_V2_SELECTOR, ZERO_ADDRESS,
+    HopAccounts, SWAPV2_SELECTOR, ZERO_ADDRESS,
 };
 
 pub struct RaydiumCLV2Accounts<'info> {
@@ -114,7 +114,7 @@ pub fn swap<'a>(
     let other_amount_threshold = 1u64;
 
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.extend_from_slice(SWAP_V2_SELECTOR);
+    data.extend_from_slice(SWAPV2_SELECTOR);
     data.extend_from_slice(&amount_in.to_le_bytes());
     data.extend_from_slice(&other_amount_threshold.to_le_bytes());
     data.extend_from_slice(&sqrt_price_limit_x64.to_le_bytes());

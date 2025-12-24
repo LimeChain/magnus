@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
-use magnus_consts::pmm_zerofi::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::pmm_zerofi::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use super::common::DexProcessor;
 use crate::{

@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use arrayref::array_ref;
-use magnus_consts::amm_raydium_cp::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::amm_raydium_cp::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use crate::{
     adapters::common::{before_check, invoke_process, DexProcessor},

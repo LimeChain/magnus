@@ -12,7 +12,7 @@ doctest = false
 idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-magnus-consts = { path = "../consts" }
+magnus-shared = { path = "../shared" }
 anchor-spl = { workspace = true }
 anchor-lang = { workspace = true,  features = ["init-if-needed", "event-cpi"]}
 arrayref = { workspace = true }

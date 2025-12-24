@@ -7,9 +7,9 @@ use anchor_lang::{
     },
 };
 use anchor_spl::{token::spl_token::state::Account as SplTokenAccount, token_2022::spl_token_2022::state::Account as SplToken2022Account, token_interface::TokenAccount};
+use magnus_shared::authority_pda;
 
 use crate::{
-    authority_pda,
     constants::{ACTUAL_IN_LOWER_BOUND_DEN, ACTUAL_IN_LOWER_BOUND_NUM},
     error::ErrorCode,
     HopAccounts, SA_AUTHORITY_SEED, ZERO_ADDRESS,
