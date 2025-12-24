@@ -7,4 +7,4 @@
 use solana_pubkey::{pubkey, Pubkey};
 
 /// `router` program ID.
-pub const ROUTER_ID: Pubkey = pubkey!("H3SocRxYoShPJ9z184k9tomq2GPViDKEghyYEr1SGrXE");
+pub const ROUTER_ID: Pubkey = pubkey!("F9Z9WiieTtL4giMt3eBFEsB5vmAFotLz37FWC7NcbzpT");

@@ -16,7 +16,7 @@ path = "src/main.rs"
 metrics = ["dep:metrics", "metrics-exporter-prometheus"]
 
 [dependencies]
-magnus-consts = { path = "../consts" }
+magnus-shared = { path = "../shared" }
 magnus-router = { path = "../router" }
 magnus-router-client = { path = "../router-client"}
 

@@ -6,12 +6,11 @@
 
 use borsh::{BorshDeserialize, BorshSerialize};
 
-use crate::types::Dex;
+use crate::generated::types::Dex;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SwapEvent {
-    pub dex: Dex,
-    pub amount_in: u64,
-    pub amount_out: u64,
+pub struct Route {
+    pub dexes: Vec<Dex>,
+    pub weights: Vec<u8>,
 }

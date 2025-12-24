@@ -5,7 +5,7 @@
     "rust": {
       "from": "@codama/renderers-rust",
       "args": [
-        "crates/router-client/src",
+        "crates/router-client/src/generated",
         {
           "crateFolder": "crates/router-client",
           "formatCode": true
