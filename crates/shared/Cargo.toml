@@ -11,3 +11,4 @@ path = "src/lib.rs"
 [dependencies]
 anchor-lang = { workspace = true }
 magnus-router-client = { path = "../router-client" }
+serde = { version = "1.0.228", features = ["derive"] }

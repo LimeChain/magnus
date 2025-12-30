@@ -103,7 +103,7 @@ pub mod wsol_program {
     declare_id!("So11111111111111111111111111111111111111112");
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, Debug, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Dex {
     RaydiumClV2,
     RaydiumCp,
