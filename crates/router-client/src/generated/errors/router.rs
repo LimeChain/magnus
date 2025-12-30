@@ -90,6 +90,9 @@ pub enum RouterError {
     /// 6026 - Math overflow
     #[error("Math overflow")]
     MathOverflow = 0x178A,
+    /// 6027 - Invalid Goonfi parameters
+    #[error("Invalid Goonfi parameters")]
+    InvalidGoonfiParameters = 0x178B,
 }
 
 impl From<RouterError> for solana_program_error::ProgramError {

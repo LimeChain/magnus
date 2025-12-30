@@ -92,47 +92,6 @@ pub fn invoke_process<'info, T: DexProcessor>(
     post_swap_check(swap_source_token, swap_destination_token, hop_accounts, accounts_len, offset, amount_in, before_source_balance, before_destination_balance)
 }
 
-pub fn invoke_processes<'info, T: DexProcessor>(
-    amount_in: u64,
-    dex_processor: &T,
-    account_infos_arr: &[&[AccountInfo]],
-    swap_source_token: &mut InterfaceAccount<'info, TokenAccount>,
-    swap_destination_token: &mut InterfaceAccount<'info, TokenAccount>,
-    hop_accounts: &mut HopAccounts,
-    instructions: &[Instruction],
-    hop: usize,
-    offset: &mut usize,
-    accounts_len: usize,
-    proxy_swap: bool,
-    owner_seeds: Option<&[&[&[u8]]]>,
-) -> Result<u64> {
-    // check accounts length
-    require!(account_infos_arr.len() == instructions.len(), ErrorCode::InvalidBundleInput);
-
-    // get before balances
-    let before_source_balance = swap_source_token.amount;
-    let before_destination_balance = swap_destination_token.amount;
-
-    let account_infos: Vec<_> = account_infos_arr.iter().flat_map(|inner| inner.iter()).cloned().collect();
-
-    // before invoke hook
-    let before_sa_authority_lamports = dex_processor.before_invoke(&account_infos)?;
-
-    // execute instructions
-    for i in 0..instructions.len() {
-        if proxy_swap || hop > 0 {
-            enforce_sa_token_allowlist(account_infos_arr[i], &[swap_source_token.key(), swap_destination_token.key()])?;
-        }
-        execute_instruction(&instructions[i], account_infos_arr[i], proxy_swap, hop, owner_seeds)?;
-    }
-
-    // after invoke hook
-    dex_processor.after_invoke(&account_infos, hop, owner_seeds, before_sa_authority_lamports)?;
-
-    // post swap check
-    post_swap_check(swap_source_token, swap_destination_token, hop_accounts, accounts_len, offset, amount_in, before_source_balance, before_destination_balance)
-}
-
 // Helper function to execute the instruction
 fn execute_instruction(instruction: &Instruction, account_infos: &[AccountInfo], proxy_swap: bool, hop: usize, owner_seeds: Option<&[&[&[u8]]]>) -> Result<()> {
     if !proxy_swap && hop == 0 {

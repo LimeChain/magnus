@@ -2,7 +2,7 @@ use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
-use magnus_shared::pmm_tesserav::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::pmm_tessera::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use super::common::DexProcessor;
 use crate::{
@@ -89,7 +89,7 @@ pub fn swap<'a>(
 
     let mut swap_accounts = TesseraAccounts::parse_accounts(remaining_accounts, *offset)?;
 
-    if swap_accounts.dex_program_id.key != &pmm_tesserav::id() {
+    if swap_accounts.dex_program_id.key != &pmm_tessera::id() {
         return Err(ErrorCode::InvalidProgramId.into());
     }
 
