@@ -47,7 +47,7 @@ impl<'info> RaydiumCPAccounts<'info> {
             input_token_mint,
             output_token_mint,
             observation_state,
-        ]: & [AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
+        ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
 
         Ok(Self {
             dex_program_id,

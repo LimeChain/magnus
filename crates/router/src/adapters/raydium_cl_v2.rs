@@ -58,8 +58,7 @@ impl<'info> RaydiumCLV2Accounts<'info> {
             tick_array0,
             tick_array1,
             tick_array2,
-
-      ]: & [AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
+        ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
 
         Ok(Self {
             dex_program_id,

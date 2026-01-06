@@ -1,7 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
 
 use solana_sdk::pubkey::Pubkey;
-use tracing::{error, info};
+use tracing::info;
 
 use crate::{
     Markets, Strategy, StrategyCtx,
@@ -61,7 +61,7 @@ impl BaseStrategy {
                 let reserve_mints = amm.get_reserve_mints();
 
                 // Filter out any default pubkeys in reserve mints
-                if reserve_mints.iter().any(|mint| *mint == default_pubkey) {
+                if reserve_mints.contains(&default_pubkey) {
                     return None;
                 }
 
@@ -114,7 +114,7 @@ impl Strategy for BaseStrategy {
                         }
                     };
 
-                    match response_tx.send(DispatchResponse::Quote(IntQuoteResponse {
+                    if let Ok(()) = response_tx.send(DispatchResponse::Quote(IntQuoteResponse {
                         source: Target::AMMs,
                         input_mint: params.input_mint.to_string(),
                         output_mint: params.output_mint.to_string(),
@@ -122,10 +122,7 @@ impl Strategy for BaseStrategy {
                         out_amount: quote.out_amount,
                         ..Default::default()
                     })) {
-                        Ok(()) => {
-                            info!("sent from `Strategy` towards `API Server::quote`");
-                        }
-                        Err(_) => {}
+                        info!("sent from `Strategy` towards `API Server::quote`");
                     };
                 }
                 // the swap is computed similarly to Quote
@@ -135,16 +132,17 @@ impl Strategy for BaseStrategy {
                 // an RPC
                 DispatchParams::Swap { params, response_tx } => {
                     // ..
-                    match self.tx.send(WrappedSwapAndAccountMetas {
-                        response_tx,
-                        input_mint: params.input_mint,
-                        output_mint: params.output_mint,
-                        metas: vec![SwapAndAccountMetas::default()],
-                    }) {
-                        Ok(_) => {
-                            info!("sent from Strategy towards `Executor`");
-                        }
-                        Err(_) => {}
+                    if self
+                        .tx
+                        .send(WrappedSwapAndAccountMetas {
+                            response_tx,
+                            input_mint: params.input_mint,
+                            output_mint: params.output_mint,
+                            metas: vec![SwapAndAccountMetas::default()],
+                        })
+                        .is_ok()
+                    {
+                        info!("sent from Strategy towards `Executor`");
                     }
                 }
             }

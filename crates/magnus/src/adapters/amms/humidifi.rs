@@ -1,7 +1,7 @@
-use std::{fmt::Debug, str::FromStr};
+use std::str::FromStr;
 
 use litesvm::LiteSVM;
-use magnus_consts::pmm_humidifi;
+use magnus_shared::pmm_humidifi;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{Adapter, amms::Amm};
@@ -18,7 +18,7 @@ use crate::adapters::{Adapter, amms::Amm};
 pub struct Humidifi {
     key: Pubkey,
     involved_accounts: Vec<Pubkey>,
-    svm: LiteSVM,
+    _svm: LiteSVM,
 }
 
 impl Adapter for Humidifi {}

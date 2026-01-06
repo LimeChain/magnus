@@ -1,7 +1,7 @@
 use anchor_lang::AccountDeserialize;
 use anchor_spl::token::TokenAccount;
 use borsh::BorshDeserialize;
-use magnus_consts::amm_raydium_cp;
+use magnus_shared::amm_raydium_cp;
 use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 

@@ -95,7 +95,7 @@ pub fn swap<'a>(
 
     swap_accounts.pool_state.key().log();
 
-    before_check(&swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_accounts.swap_destination_token.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_accounts.swap_destination_token.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let is_base_in = if swap_accounts.swap_source_token.mint == swap_accounts.base_mint.key() {
         true

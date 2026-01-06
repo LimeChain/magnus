@@ -17,8 +17,8 @@ pub struct IngestorCfg<T: Interceptor + Send + Sync> {
 
 pub struct GeyserPoolStateIngestor<T: Interceptor + Send + Sync> {
     client_geyser: GeyserClientWrapped<T>,
-    client_default: std::sync::Arc<RpcClient>,
-    program_markets: Programs,
+    _client_default: std::sync::Arc<RpcClient>,
+    _program_markets: Programs,
     markets: Markets,
     account_map: AccountMap,
 }
@@ -27,8 +27,8 @@ impl<T: Interceptor + Send + Sync> GeyserPoolStateIngestor<T> {
     pub fn new(cfg: IngestorCfg<T>) -> Self {
         Self {
             client_geyser: GeyserClientWrapped::new(cfg.client_geyser),
-            client_default: cfg.client_default,
-            program_markets: cfg.program_markets,
+            _client_default: cfg.client_default,
+            _program_markets: cfg.program_markets,
             markets: cfg.markets,
             account_map: cfg.account_map,
         }

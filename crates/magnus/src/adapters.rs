@@ -1,9 +1,9 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey, signature::Signature, transaction::Transaction};
+use solana_sdk::{instruction::AccountMeta, pubkey::Pubkey};
 use utoipa::ToSchema;
 
-use crate::adapters::amms::{Side, Target};
+use crate::adapters::amms::Target;
 
 pub mod aggregators;
 pub mod amms;
