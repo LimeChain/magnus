@@ -13,12 +13,12 @@ The system is made up of two core components:
 
 The currently implemented liquidity sources include:
 
-- Humidifi
-- SolfiV2
+- HumidiFi
+- SolFiV2
 - ObricV2
-- Zerofi
+- ZeroFi
 - TesseraV
-- Goonfi
+- GoonFi
 - Raydium (Constant Product)
 - Raydium (Concentrated Liquidity)
 
