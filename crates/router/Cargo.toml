@@ -1,6 +1,6 @@
 [package]
 name = "magnus-router"
-version = "0.1.0"
+version = "0.0.1-rc"
 edition = "2021"
 
 [lib]

@@ -2,7 +2,7 @@ cargo-features = ["edition2024"]
 
 [package]
 name = "magnus-shared"
-version = "0.1.0"
+version = "0.0.1-rc"
 edition = "2024"
 
 [lib]
