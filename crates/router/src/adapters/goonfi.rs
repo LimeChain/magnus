@@ -91,7 +91,7 @@ pub fn swap<'a>(
 
     swap_accounts.market.key().log();
 
-    before_check(&swap_accounts.swap_authority, &swap_accounts.swap_source_account, swap_accounts.swap_destination_account.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority, &swap_accounts.swap_source_account, swap_accounts.swap_destination_account.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let quote_mint: Pubkey = swap_accounts.quote_vault.try_borrow_data()?[0..32].try_into().unwrap();
 
@@ -104,10 +104,10 @@ pub fn swap<'a>(
     };
 
     // Extract blacklist_bump from goonfi_param account
-    let goonfi_param_data = swap_accounts.goonfi_param.key().as_array().clone();
+    let goonfi_param_data = *swap_accounts.goonfi_param.key().as_array();
     let blacklist_bump = u8::from_le_bytes(goonfi_param_data[0..1].try_into().map_err(|_| ErrorCode::InvalidGoonfiParameters)?);
     let unused = &goonfi_param_data[1..32];
-    require!(unused == &[0u8; 31], ErrorCode::InvalidGoonfiParameters);
+    require!(unused == [0u8; 31], ErrorCode::InvalidGoonfiParameters);
 
     let swap_params: SwapParams = SwapParams { is_user_bid: is_bid, bump: blacklist_bump, amount_in, minimum_amount_out: 1 };
 

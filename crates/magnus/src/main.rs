@@ -8,7 +8,7 @@ use magnus::metrics_server;
 use magnus::{
     EmptyCtx, Executor, Ingest, Strategy,
     api_server::{self, ApiServerCfg},
-    bootstrap::{Bootstrap, MarketRaw},
+    bootstrap::Bootstrap,
     executor::{BaseExecutor, BaseExecutorCfg},
     ingest::{GeyserPoolStateIngestor, IngestorCfg},
     strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, WrappedSwapAndAccountMetas},

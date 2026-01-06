@@ -1,4 +1,4 @@
-#![allow(unexpected_cfgs)]
+#![allow(unexpected_cfgs, clippy::too_many_arguments)]
 
 use anchor_lang::prelude::*;
 pub mod adapters;

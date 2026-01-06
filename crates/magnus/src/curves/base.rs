@@ -120,18 +120,6 @@ impl Default for SwapCurve {
     }
 }
 
-/// Clone takes advantage of pack / unpack to get around the difficulty of
-/// cloning dynamic objects.
-/// Note that this is only to be used for testing.
-#[cfg(any(test))]
-impl Clone for SwapCurve {
-    fn clone(&self) -> Self {
-        let mut packed_self = [0u8; Self::LEN];
-        Self::pack_into_slice(self, &mut packed_self);
-        Self::unpack_from_slice(&packed_self).unwrap()
-    }
-}
-
 /// Simple implementation for PartialEq which assumes that the output of
 /// `Pack` is enough to guarantee equality
 impl PartialEq for SwapCurve {

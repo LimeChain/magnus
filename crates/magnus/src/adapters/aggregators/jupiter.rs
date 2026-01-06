@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    adapters::{Adapter, PlanItem, IntQuoteResponse, aggregators::Aggregator, amms::Target},
+    adapters::{Adapter, IntQuoteResponse, PlanItem, aggregators::Aggregator, amms::Target},
     helpers::parse_amount,
 };
 

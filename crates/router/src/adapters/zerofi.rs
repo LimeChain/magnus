@@ -41,8 +41,8 @@ impl<'info> ZeroFiAccount<'info> {
             vault_info_quote,
             vault_quote,
             token_program,
-            sysvar_instructions
-        ]: & [AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
+            sysvar_instructions,
+        ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
         Ok(Self {
             dex_program_id,
             swap_authority_pubkey,

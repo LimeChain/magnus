@@ -44,7 +44,7 @@ impl<'info> SolfiAccountV2<'info> {
             base_token_program,
             quote_token_program,
             instruction_sysvar,
-        ]: & [AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
+        ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
         Ok(Self {
             dex_program_id,
             swap_authority_pubkey,

@@ -1,6 +1,5 @@
 use anchor_spl::token_interface::spl_token_metadata_interface::borsh::{BorshDeserialize, BorshSerialize};
-use futures_util::StreamExt as _;
-use magnus_consts::amm_raydium_cl_v2;
+use magnus_shared::amm_raydium_cl_v2;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{Adapter, amms::Amm};
@@ -12,7 +11,7 @@ impl Adapter for RaydiumCLV2 {}
 
 impl RaydiumCLV2 {
     pub fn new() -> RaydiumCLV2 {
-        RaydiumCLV2::default()
+        RaydiumCLV2
     }
 }
 

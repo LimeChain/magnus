@@ -5,7 +5,6 @@ use std::{
 };
 
 use ahash::HashMapExt;
-use eyre::eyre;
 use serde::Deserialize;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -56,11 +55,11 @@ impl Bootstrap {
     }
 
     /// acquires all the programs for whom we're following one or more markets.
-    pub fn transform_market_to_owner(markets: &Vec<MarketRaw>) -> Vec<Pubkey> {
+    pub fn transform_market_to_owner(markets: &[MarketRaw]) -> Vec<Pubkey> {
         markets.iter().map(|market| market.owner).collect()
     }
 
-    pub fn transform_markets(markets: &Vec<MarketRaw>) -> HashMap<Pubkey, MarketRaw> {
+    pub fn transform_markets(markets: &[MarketRaw]) -> HashMap<Pubkey, MarketRaw> {
         markets.iter().map(|market| (market.pubkey, market.clone())).collect()
     }
 
@@ -79,9 +78,9 @@ impl Bootstrap {
     }
 
     /// Initialises the corresponding markets based on the provided programs
-    pub async fn init_markets(program_markets: Programs, markets_raw: &Vec<MarketRaw>) -> eyre::Result<Markets> {
+    pub async fn init_markets(program_markets: Programs, markets_raw: &[MarketRaw]) -> eyre::Result<Markets> {
         let raydium_cp_id = RaydiumCP::default().program_id();
-        let raydium_cl_v2_id = RaydiumCLV2::default().program_id();
+        let raydium_cl_v2_id = RaydiumCLV2.program_id();
         let obric_v2_id = ObricV2::default().program_id();
         let humidifi_id = Humidifi::default().program_id();
 

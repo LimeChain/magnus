@@ -2,7 +2,7 @@ use anchor_lang::AccountDeserialize;
 use anchor_spl::token::{Mint, TokenAccount};
 use borsh::BorshDeserialize;
 use eyre::Result;
-use magnus_consts::{pmm_obric_v2, spl_token};
+use magnus_shared::{pmm_obric_v2, spl_token};
 use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 

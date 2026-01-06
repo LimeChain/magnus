@@ -95,10 +95,10 @@ pub fn invoke_process<'info, T: DexProcessor>(
 // Helper function to execute the instruction
 fn execute_instruction(instruction: &Instruction, account_infos: &[AccountInfo], proxy_swap: bool, hop: usize, owner_seeds: Option<&[&[&[u8]]]>) -> Result<()> {
     if !proxy_swap && hop == 0 {
-        if owner_seeds.is_none() {
-            invoke(instruction, account_infos)?;
+        if let Some(seeds) = owner_seeds {
+            invoke_signed(instruction, account_infos, seeds)?;
         } else {
-            invoke_signed(instruction, account_infos, owner_seeds.unwrap())?;
+            invoke(instruction, account_infos)?;
         }
     } else {
         invoke_signed(instruction, account_infos, SA_AUTHORITY_SEED)?;
