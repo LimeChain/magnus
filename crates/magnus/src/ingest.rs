@@ -5,12 +5,11 @@ use tracing::{error, info};
 use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
 use yellowstone_grpc_proto::geyser::subscribe_update;
 
-use crate::{AccountMap, Ingest, IngestCtx, Markets, Programs, StateAccountToMarket, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
+use crate::{AccountMap, Ingest, IngestCtx, Markets, StateAccountToMarket, adapters::amms::Amm, bootstrap, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
 
 pub struct IngestorCfg<T: Interceptor + Send + Sync> {
     pub client_geyser: GeyserGrpcClient<T>,
     pub client_default: std::sync::Arc<RpcClient>,
-    pub program_markets: Programs,
     pub markets: Markets,
     pub account_map: AccountMap,
 }
@@ -18,20 +17,13 @@ pub struct IngestorCfg<T: Interceptor + Send + Sync> {
 pub struct GeyserPoolStateIngestor<T: Interceptor + Send + Sync> {
     client_geyser: GeyserClientWrapped<T>,
     _client_default: std::sync::Arc<RpcClient>,
-    _program_markets: Programs,
     markets: Markets,
     account_map: AccountMap,
 }
 
 impl<T: Interceptor + Send + Sync> GeyserPoolStateIngestor<T> {
     pub fn new(cfg: IngestorCfg<T>) -> Self {
-        Self {
-            client_geyser: GeyserClientWrapped::new(cfg.client_geyser),
-            _client_default: cfg.client_default,
-            _program_markets: cfg.program_markets,
-            markets: cfg.markets,
-            account_map: cfg.account_map,
-        }
+        Self { client_geyser: GeyserClientWrapped::new(cfg.client_geyser), _client_default: cfg.client_default, markets: cfg.markets, account_map: cfg.account_map }
     }
 }
 
@@ -42,7 +34,7 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
     }
 
     async fn ingest<C: IngestCtx>(&mut self, _: C) -> eyre::Result<()> {
-        info!("starting service: {}", self.name() /* self.markets.len() */,);
+        info!("starting service: {}", self.name());
 
         let state_acc_to_market: StateAccountToMarket = self
             .markets
@@ -57,8 +49,6 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
 
         let filter = self.client_geyser.craft_filter(state_acc_to_market.keys().map(|v| v.to_string()).collect()).await;
         let mut stream = self.client_geyser.subscribe(filter).await;
-
-        // need to init through ::from_keyed_account()
 
         while let Some(message) = stream.next().await {
             match message {
@@ -77,7 +67,7 @@ impl<T: Interceptor + Send + Sync> Ingest for GeyserPoolStateIngestor<T> {
                         if let Some(market) = self.markets.lock().unwrap().get_mut(market_pubkey)
                             && let Ok(_) = market.update(&self.account_map, Some(slot))
                         {
-                            info!("recv update")
+                            info!("recv update for market: {:?}", market);
                         }
                     }
                 }

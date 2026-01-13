@@ -10,8 +10,8 @@
       }
     ],
     "reserve_mints": [
-      "So11111111111111111111111111111111111111112",
-      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
     ]
   },
   {
@@ -25,8 +25,8 @@
       }
     ],
     "reserve_mints": [
-      "So11111111111111111111111111111111111111112",
-      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
     ]
   },
   {
@@ -40,8 +40,8 @@
       }
     ],
     "reserve_mints": [
-      "So11111111111111111111111111111111111111112",
-      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
     ]
   },
   {

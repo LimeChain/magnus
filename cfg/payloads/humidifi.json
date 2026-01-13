@@ -9,7 +9,10 @@
         "quote_ta": "3RWFAQBRkNGq7CMGcTLK3kXDgFTe9jgMeFYqk8nHwcWh"
       }
     ],
-    "additional": ["9YW7Rc8ongNLedz9YBp5hVYwdEJHuHbQkUf3fZocNkHN"]
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
+    ]
   },
   {
     "dex": "humidifi",
@@ -20,6 +23,10 @@
         "base_ta": "8BrVfsvzb1DZqCactbYWoKSv24AfsLBuXJqzpzYCwznF",
         "quote_ta": "HsQcHFFNUVTp3MWrXYbuZchBNd4Pwk8636bKzLvpfYNR"
       }
+    ],
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
     ]
   },
   {
@@ -31,6 +38,10 @@
         "base_ta": "C3FzbX9n1YD2dow2dCmEv5uNyyf22Gb3TLAEqGBhw5fY",
         "quote_ta": "3RWFAQBRkNGq7CMGcTLK3kXDgFTe9jgMeFYqk8nHwcWh"
       }
+    ],
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
     ]
   },
   {
@@ -42,6 +53,10 @@
         "base_ta": "ECEPWwZJ1U1Vjsj1X5sUbZYETKMSCjYHuoTMVitCn64t",
         "quote_ta": "FBWtVVvzsRuAAzVX8ua1hden9KmgPrC2rFijuwEn1ngJ"
       }
+    ],
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
     ]
   }
 ]

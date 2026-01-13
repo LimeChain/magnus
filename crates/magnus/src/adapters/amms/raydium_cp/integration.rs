@@ -6,8 +6,8 @@ use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{
-    Adapter, AmmSwap,
-    amms::{AccountMap, Amm, AmmContext, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams, raydium_cp},
+    Adapter, AmmKind,
+    amms::{AccountMap, Amm, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams, raydium_cp},
 };
 
 #[derive(Clone, Debug, Default)]
@@ -51,11 +51,11 @@ impl Amm for RaydiumCP {
         vec![self.state.token_0_vault, self.state.token_1_vault]
     }
 
-    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
-        Box::new(RaydiumCP { key: self.key, state: self.state.clone(), current_x: self.current_x, current_y: self.current_y })
-    }
+    //fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
+    //    Box::new(RaydiumCP { key: self.key, state: self.state.clone(), current_x: self.current_x, current_y: self.current_y })
+    //}
 
-    fn from_keyed_account(keyed_account: &KeyedAccount, _: &AmmContext) -> eyre::Result<Self>
+    fn from_keyed_account(keyed_account: &KeyedAccount) -> eyre::Result<Self>
     where
         Self: Sized,
     {
@@ -77,7 +77,7 @@ impl Amm for RaydiumCP {
         Ok(())
     }
 
-    fn quote(&self, quote_params: &QuoteParams) -> eyre::Result<Quote> {
+    fn quote(&mut self, quote_params: &QuoteParams) -> eyre::Result<Quote> {
         let (input_reserve, output_reserve) = if quote_params.input_mint == self.state.token_0_mint {
             (self.current_x, self.current_y)
         } else {
@@ -112,8 +112,8 @@ impl Amm for RaydiumCP {
             AccountMeta::new_readonly(swap_params.token_transfer_authority, false),
             AccountMeta::new_readonly(self.state.amm_config, false),
             AccountMeta::new(self.key(), false),
-            AccountMeta::new(swap_params.source_token_account, false),
-            AccountMeta::new(swap_params.destination_token_account, false),
+            AccountMeta::new(swap_params.src_ta, false),
+            AccountMeta::new(swap_params.dst_ta, false),
             AccountMeta::new(vault_in, false),
             AccountMeta::new(vault_out, false),
             AccountMeta::new_readonly(program_in, false),
@@ -123,6 +123,6 @@ impl Amm for RaydiumCP {
             AccountMeta::new(self.state.observation_key, false),
         ];
 
-        Ok(SwapAndAccountMetas { swap: AmmSwap::RaydiumCP, account_metas })
+        Ok(SwapAndAccountMetas { swap: AmmKind::RaydiumCP, account_metas })
     }
 }

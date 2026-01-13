@@ -8,7 +8,7 @@ use magnus::metrics_server;
 use magnus::{
     EmptyCtx, Executor, Ingest, Strategy,
     api_server::{self, ApiServerCfg},
-    bootstrap::Bootstrap,
+    bootstrap,
     executor::{BaseExecutor, BaseExecutorCfg},
     ingest::{GeyserPoolStateIngestor, IngestorCfg},
     strategy::{BaseStrategy, BaseStrategyCfg, DispatchParams, WrappedSwapAndAccountMetas},
@@ -50,7 +50,7 @@ pub struct Cfg {
     http_url: String,
     yellowstone_url: Option<String>,
     yellowstone_x_token: Option<String>,
-    bootstrap_file: Option<String>,
+    bootstrap_file: String,
     api_server_host: String,
     api_server_workers: u16,
     metrics_server_host: String,
@@ -66,12 +66,6 @@ async fn run(cfg: Cfg) {
     #[cfg(feature = "metrics")]
     metrics_server::initialise_prometheus_description_metrics();
 
-    /*
-     * |1| Bootstrap proper state, either natively or via some external provider (check out `https://cache.jup.ag/markets?v=4`)
-     * |2| Define concrete, uniform interfaces for all the adapters
-     * |3| Implement a proper routing engine based on some defined constraints
-     */
-
     let client_http = std::sync::Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url));
     let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
@@ -84,19 +78,11 @@ async fn run(cfg: Cfg) {
         .await
         .expect("unable to connect");
 
-    let bootstrap = match &cfg.bootstrap_file {
-        Some(file) => Bootstrap::ingest_from_file(file).expect("unable to ingest from file"),
-        None => Bootstrap::ingest_from_jupiter().await.expect("unable to ingest from jupiter"),
-    };
+    let pmms = bootstrap::load(&cfg.bootstrap_file).expect("unable to load bootstrap file");
+    let markets = bootstrap::into_markets(pmms);
+    let account_map = bootstrap::acquire_account_map(&client_http, &markets).await.expect("unable to acquire account map");
+    debug!(?account_map);
 
-    let programs = Bootstrap::get_program_markets(&bootstrap);
-    let markets = Bootstrap::init_markets(programs, &bootstrap.markets_raw).await.expect("unable to initialise markets");
-    let account_map = Bootstrap::acquire_account_map(&client_http, &markets).await.expect("unable to acquire account map");
-
-    let program_markets = Bootstrap::get_program_markets(&bootstrap);
-    debug!("account_map: {:?}", account_map);
-
-    // ..
     let bare_ctx = EmptyCtx;
 
     /*
@@ -111,7 +97,7 @@ async fn run(cfg: Cfg) {
     let (response_tx, response_rx) = mpsc::channel::<WrappedSwapAndAccountMetas>();
 
     {
-        let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), program_markets, markets: markets.clone(), account_map };
+        let cfg = IngestorCfg { client_geyser, client_default: client_http.clone(), markets: markets.clone(), account_map };
         tokio::spawn(async move { GeyserPoolStateIngestor::new(cfg).ingest(bare_ctx).await });
     };
 

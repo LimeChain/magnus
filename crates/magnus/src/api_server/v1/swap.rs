@@ -51,7 +51,7 @@ pub async fn swap_handler(params: web::Json<SwapUserParam>, state: web::Data<Ser
         Err(_) => return HttpResponse::BadRequest().json(json!({"error": "invalid private key"})),
     };
 
-    info!("{:?}", keypair);
+    info!(?keypair);
 
     match params.target {
         Target::Aggregators | Target::Jupiter | Target::DFlow => HttpResponse::NotImplemented().json(serde_json::json!({"error": "can't swap through the aggregators"})),
@@ -73,7 +73,7 @@ pub async fn swap_handler(params: web::Json<SwapUserParam>, state: web::Data<Ser
 }
 
 /// implementation courtesy to https://docs.rs/solana-keypair/3.0.0/src/solana_keypair/lib.rs.html#154-189
-/// Reads a JSON-encoded `Keypair` from a `Reader` implementor
+/// Reads a JSON-encoded `Keypair`
 pub fn read_keypair(reader: &str) -> eyre::Result<Keypair> {
     let trimmed = reader.trim();
     if !trimmed.starts_with('[') || !trimmed.ends_with(']') {

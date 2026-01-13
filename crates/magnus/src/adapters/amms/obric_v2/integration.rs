@@ -7,9 +7,9 @@ use solana_instruction::AccountMeta;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::adapters::{
-    Adapter, AmmSwap,
+    Adapter, AmmKind,
     amms::{
-        AccountMap, Amm, AmmContext, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams,
+        AccountMap, Amm, KeyedAccount, Quote, QuoteParams, SwapAndAccountMetas, SwapParams,
         obric_v2::state::{PriceFeed, SSTradingPair},
     },
 };
@@ -100,7 +100,7 @@ impl Amm for ObricV2 {
         Ok(())
     }
 
-    fn quote(&self, quote_params: &QuoteParams) -> Result<Quote> {
+    fn quote(&mut self, quote_params: &QuoteParams) -> Result<Quote> {
         let (output_after_fee, protocol_fee, lp_fee) = if quote_params.input_mint.eq(&self.state.mint_x) {
             self.state.quote_x_to_y(quote_params.amount, self.current_x, self.current_y)?
         } else if quote_params.input_mint.eq(&self.state.mint_y) {
@@ -115,46 +115,46 @@ impl Amm for ObricV2 {
         }
     }
 
-    fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
-        let state = &self.state;
-        Box::new(Self {
-            key: self.key,
-            state: SSTradingPair {
-                is_initialized: state.is_initialized,
-                x_price_feed_id: state.x_price_feed_id,
-                y_price_feed_id: state.y_price_feed_id,
-                reserve_x: state.reserve_x,
-                reserve_y: state.reserve_y,
-                protocol_fee_x: state.protocol_fee_x,
-                protocol_fee_y: state.protocol_fee_y,
-                bump: state.bump,
-                mint_x: state.mint_x,
-                mint_y: state.mint_y,
-                concentration: state.concentration,
-                big_k: state.big_k,
-                target_x: state.target_x,
-                cumulative_volume: state.cumulative_volume,
-                mult_x: state.mult_x,
-                mult_y: state.mult_y,
-                fee_millionth: state.fee_millionth,
-                rebate_percentage: state.rebate_percentage,
-                protocol_fee_share_thousandth: state.protocol_fee_share_thousandth,
-                volume_record: state.volume_record,
-                volume_time_record: state.volume_time_record,
-                version: state.version,
-                padding: state.padding,
-                mint_sslp_x: state.mint_sslp_x,
-                mint_sslp_y: state.mint_sslp_y,
-                padding2: state.padding2,
-            },
-            current_x: self.current_x,
-            current_y: self.current_y,
-            x_decimals: self.x_decimals,
-            y_decimals: self.y_decimals,
-        })
-    }
+    //fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
+    //    let state = &self.state;
+    //    Box::new(Self {
+    //        key: self.key,
+    //        state: SSTradingPair {
+    //            is_initialized: state.is_initialized,
+    //            x_price_feed_id: state.x_price_feed_id,
+    //            y_price_feed_id: state.y_price_feed_id,
+    //            reserve_x: state.reserve_x,
+    //            reserve_y: state.reserve_y,
+    //            protocol_fee_x: state.protocol_fee_x,
+    //            protocol_fee_y: state.protocol_fee_y,
+    //            bump: state.bump,
+    //            mint_x: state.mint_x,
+    //            mint_y: state.mint_y,
+    //            concentration: state.concentration,
+    //            big_k: state.big_k,
+    //            target_x: state.target_x,
+    //            cumulative_volume: state.cumulative_volume,
+    //            mult_x: state.mult_x,
+    //            mult_y: state.mult_y,
+    //            fee_millionth: state.fee_millionth,
+    //            rebate_percentage: state.rebate_percentage,
+    //            protocol_fee_share_thousandth: state.protocol_fee_share_thousandth,
+    //            volume_record: state.volume_record,
+    //            volume_time_record: state.volume_time_record,
+    //            version: state.version,
+    //            padding: state.padding,
+    //            mint_sslp_x: state.mint_sslp_x,
+    //            mint_sslp_y: state.mint_sslp_y,
+    //            padding2: state.padding2,
+    //        },
+    //        current_x: self.current_x,
+    //        current_y: self.current_y,
+    //        x_decimals: self.x_decimals,
+    //        y_decimals: self.y_decimals,
+    //    })
+    //}
 
-    fn from_keyed_account(keyed_account: &KeyedAccount, _: &AmmContext) -> Result<Self>
+    fn from_keyed_account(keyed_account: &KeyedAccount) -> Result<Self>
     where
         Self: Sized,
     {
@@ -165,13 +165,13 @@ impl Amm for ObricV2 {
 
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas> {
         let (user_token_account_x, user_token_account_y, protocol_fee) = if swap_params.input_mint.eq(&self.state.mint_x) {
-            (swap_params.source_token_account, swap_params.destination_token_account, self.state.protocol_fee_y)
+            (swap_params.src_ta, swap_params.dst_ta, self.state.protocol_fee_y)
         } else {
-            (swap_params.destination_token_account, swap_params.source_token_account, self.state.protocol_fee_x)
+            (swap_params.dst_ta, swap_params.src_ta, self.state.protocol_fee_x)
         };
 
         Ok(SwapAndAccountMetas {
-            swap: AmmSwap::ObricV2,
+            swap: AmmKind::ObricV2,
             account_metas: vec![
                 AccountMeta::new(self.key(), false),
                 AccountMeta::new_readonly(self.state.mint_x, false),

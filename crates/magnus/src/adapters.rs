@@ -34,8 +34,8 @@ pub struct SwapParams {
     pub amount: u64,
     pub input_mint: Pubkey,
     pub output_mint: Pubkey,
-    pub source_token_account: Pubkey,
-    pub destination_token_account: Pubkey,
+    pub src_ta: Pubkey,
+    pub dst_ta: Pubkey,
     /// This can be the user or the program authority over the source_token_account.
     pub token_transfer_authority: Pubkey,
 }
@@ -57,12 +57,12 @@ pub struct Quote {
 
 #[derive(Clone, Debug, Default)]
 pub struct SwapAndAccountMetas {
-    pub swap: AmmSwap,
+    pub swap: AmmKind,
     pub account_metas: Vec<AccountMeta>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub enum AmmSwap {
+pub enum AmmKind {
     #[default]
     RaydiumCP,
     RaydiumCLV2,
