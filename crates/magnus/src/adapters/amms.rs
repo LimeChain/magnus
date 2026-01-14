@@ -103,11 +103,11 @@ impl Chroot {
 
         let mut chroot = Chroot { svm, wallet, mints };
 
-        chroot.svm.airdrop(&&chroot.wallet_pubkey(), Chroot::AIRDROP_AMOUNT).unwrap();
+        chroot.svm.airdrop(&chroot.wallet_pubkey(), Chroot::AIRDROP_AMOUNT).unwrap();
 
         mints.iter().for_each(|(mint, dec)| {
             let mint_acc = Chroot::mk_mint_acc(*dec);
-            chroot.load_accounts(vec![(*mint, mint_acc)]).expect(&format!("unable to load account {}", *mint));
+            chroot.load_accounts(vec![(*mint, mint_acc)]).unwrap_or_else(|_| panic!("unable to load account {}", *mint));
         });
 
         chroot
@@ -166,7 +166,7 @@ impl Chroot {
     }
 
     pub fn wallet_ata(&self, mint: &Pubkey) -> Pubkey {
-        get_associated_token_address(&mint, &self.wallet_pubkey())
+        get_associated_token_address(mint, &self.wallet_pubkey())
     }
 
     pub fn get_ta(mint: Pubkey, owner: Pubkey) -> Pubkey {
@@ -177,7 +177,7 @@ impl Chroot {
         SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()
     }
 
-    fn token_balance(&self, mint: &Pubkey) -> u64 {
+    pub fn token_balance(&self, mint: &Pubkey) -> u64 {
         let ata = self.wallet_ata(mint);
         let acc = self.svm.get_account(&ata).unwrap_or_default();
         spl_token::state::Account::unpack(&acc.data).map(|a| a.amount).unwrap_or(0)

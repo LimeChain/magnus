@@ -2,7 +2,6 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use solana_sdk::pubkey::Pubkey;
 use tracing::info;
-use utoipa::openapi::info;
 
 use crate::{
     Markets, Strategy, StrategyCtx,

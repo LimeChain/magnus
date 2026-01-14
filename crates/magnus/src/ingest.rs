@@ -5,7 +5,7 @@ use tracing::{error, info};
 use yellowstone_grpc_client::{GeyserGrpcClient, Interceptor};
 use yellowstone_grpc_proto::geyser::subscribe_update;
 
-use crate::{AccountMap, Ingest, IngestCtx, Markets, StateAccountToMarket, adapters::amms::Amm, bootstrap, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
+use crate::{AccountMap, Ingest, IngestCtx, Markets, StateAccountToMarket, geyser_client::GeyserClientWrapped, helpers::geyser_acc_to_native};
 
 pub struct IngestorCfg<T: Interceptor + Send + Sync> {
     pub client_geyser: GeyserGrpcClient<T>,
