@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs, str::FromStr, sync::Mutex};
 
 use eyre::eyre;
 use magnus_shared::Dex;
-use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::{
@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-pub fn load(file: &str) -> eyre::Result<Vec<Box<dyn Amm>>> {
+pub fn load(file: &str, client: &RpcClient) -> eyre::Result<Vec<Box<dyn Amm>>> {
     let json = fs::read_to_string(file)?;
 
     let cfgs: serde_json::Value = serde_json::from_str(&json)?;
@@ -25,9 +25,9 @@ pub fn load(file: &str) -> eyre::Result<Vec<Box<dyn Amm>>> {
                 let dex = Dex::from_str(item.get("dex").and_then(|dex| dex.as_str()).expect("no DEX provided")).map_err(|e| eyre!(e)).expect("");
 
                 let init: Box<dyn Amm> = match dex {
-                    Dex::Humidifi => {
+                    Dex::HumidiFi => {
                         let cfg = HumidifiCfg::try_from(item).map_err(|e| eyre!(e)).expect("");
-                        let amm = Humidifi::new(cfg);
+                        let amm = Humidifi::new(cfg, client).expect("unable to initialise humidifi");
 
                         Box::new(amm)
                     }
@@ -62,9 +62,9 @@ pub fn into_markets(pmms: Vec<Box<dyn Amm>>) -> Markets {
 }
 
 /// Fetches account data for all tracked accounts from the RPC client.
-pub async fn acquire_account_map(client: &RpcClient, markets: &Markets) -> eyre::Result<AccountMap> {
+pub fn acquire_account_map(client: &RpcClient, markets: &Markets) -> eyre::Result<AccountMap> {
     let market_keys: Vec<Pubkey> = markets.lock().unwrap().keys().cloned().collect();
-    let accs = client.get_multiple_accounts(&market_keys).await?;
+    let accs = client.get_multiple_accounts(&market_keys)?;
 
     let acc_map = market_keys.into_iter().zip(accs).filter_map(|(key, acc_opt)| acc_opt.map(|acc| (key, acc))).collect();
 

@@ -65,11 +65,11 @@ impl BaseStrategy {
 
                     match amm.quote(&quote_params) {
                         Ok(quote) => {
-                            info!("Market {} has quote {:?}", market_key, quote);
+                            info!(?market_key, ?quote);
                             Some((*market_key, quote))
                         }
-                        Err(_) => {
-                            info!("Market {} failed to quote", market_key);
+                        Err(e) => {
+                            info!("Market {} failed to quote | {}", market_key, e);
                             None
                         }
                     }

@@ -1,10 +1,11 @@
 use std::str::FromStr;
 
 use eyre::eyre;
-use magnus_router_client::instructions::SwapBuilder;
+use magnus_router_client::{instructions::SwapBuilder, programs::ROUTER_ID};
 use magnus_shared::{Dex, Route, pmm_humidifi};
 use rust_decimal::dec;
 use serde::{Deserialize, Serialize};
+use solana_client::rpc_client::RpcClient;
 use solana_instruction::AccountMeta;
 use solana_sdk::{pubkey::Pubkey, sysvar, transaction::Transaction};
 
@@ -14,14 +15,11 @@ use crate::adapters::{
 };
 
 /*
- * Few things that might be more opaque here:
- *
  * Since we cannot directly deserialize into some structure (there's no clue how
  * humidifi, or any other prop AMM for that matter, keeps track of its state),
  * we'll simulate the `quote` and `swap` expected by the `Amm` trait through
  * a virtual env established through litesvm.
  */
-//#[derive(Default)]
 pub struct Humidifi {
     key: Pubkey,
     cfg: HumidifiCfg,
@@ -82,8 +80,20 @@ impl TryFrom<&serde_json::Value> for HumidifiCfg {
 impl Adapter for Humidifi {}
 
 impl Humidifi {
-    pub fn new(cfg: HumidifiCfg) -> eyre::Result<Humidifi> {
-        let chroot = Chroot::new(cfg.reserve_mints).load_program(Pubkey::from_str_const(&pmm_humidifi::id().to_string()), "./cfg/programs/")?;
+    pub fn new(cfg: HumidifiCfg, client: &RpcClient) -> eyre::Result<Humidifi> {
+        let mut chroot = Chroot::new(cfg.reserve_mints);
+        chroot.load_program(ROUTER_ID, "./cfg/programs/magnus-router.so")?;
+        chroot.load_program(Pubkey::from_str_const(&pmm_humidifi::id().to_string()), "./cfg/programs/humidifi.so")?;
+
+        let accs = client.get_multiple_accounts(&[cfg.market, cfg.base_ta, cfg.quote_ta])?;
+        chroot.load_accounts(vec![(cfg.market, accs[0].clone().unwrap()), (cfg.base_ta, accs[1].clone().unwrap()), (cfg.quote_ta, accs[2].clone().unwrap())])?;
+
+        cfg.reserve_mints.iter().try_for_each(|(mint_addr, _)| -> eyre::Result<()> {
+            let ata = Chroot::mk_ata(mint_addr, &chroot.wallet_pubkey(), 0);
+            let addr = chroot.wallet_ata(mint_addr);
+            chroot.load_accounts(vec![(addr, ata)])
+        })?;
+
         Ok(Humidifi { key: cfg.pubkey, cfg, chroot })
     }
 }
@@ -128,7 +138,7 @@ impl Amm for Humidifi {
     fn update(&mut self, account_map: &super::AccountMap, slot: Option<u64>) -> eyre::Result<()> {
         let accs = account_map.iter().map(|(key, account)| (*key, account.clone())).collect();
 
-        self.chroot.update_accounts(accs);
+        self.chroot.update_accounts(accs)?;
 
         if let Some(slot) = slot {
             self.chroot.update_slot(slot);
@@ -140,7 +150,12 @@ impl Amm for Humidifi {
     fn quote(&mut self, params: &crate::adapters::QuoteParams) -> eyre::Result<crate::adapters::Quote> {
         let src_ta = Chroot::get_ta(params.input_mint, self.chroot.wallet_pubkey());
         let dst_ta = Chroot::get_ta(params.output_mint, self.chroot.wallet_pubkey());
-        let routes: Vec<Vec<magnus_router_client::types::Route>> = vec![vec![Route { dexes: vec![Dex::Humidifi], weights: vec![100] }.into()]];
+
+        let ata = Chroot::mk_ata(&params.input_mint, &self.chroot.wallet_pubkey(), params.amount);
+        let addr = self.chroot.wallet_ata(&params.input_mint);
+        self.chroot.load_accounts(vec![(addr, ata)])?;
+
+        let routes: Vec<Vec<magnus_router_client::types::Route>> = vec![vec![Route { dexes: vec![Dex::HumidiFi], weights: vec![100] }.into()]];
         let swap_params = SwapParams {
             swap_mode: params.swap_mode,
             amount: params.amount,
@@ -208,42 +223,52 @@ impl Amm for Humidifi {
     {
         unimplemented!()
     }
-
-    //fn clone_amm(&self) -> Box<dyn Amm + Send + Sync> {
-    //    Box::new(self.clone())
-    //}
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//
-//    #[test]
-//    fn test_humidifi_from_value() {
-//        let json = r#"{
-//            "dex": "humidifi",
-//            "pubkey": "FksffEqnBRixYGR791Qw2MgdU7zNCpHVFYBL4Fa4qVuH",
-//            "accounts": [
-//                {
-//                    "market": "FksffEqnBRixYGR791Qw2MgdU7zNCpHVFYBL4Fa4qVuH",
-//                    "base_ta": "C3FzbX9n1YD2dow2dCmEv5uNyyf22Gb3TLAEqGBhw5fY",
-//                    "quote_ta": "3RWFAQBRkNGq7CMGcTLK3kXDgFTe9jgMeFYqk8nHwcWh"
-//                }
-//            ],
-//            "reserve_mints": [
-//                "So11111111111111111111111111111111111111112",
-//                "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-//            ]
-//        }"#;
-//
-//        let value: serde_json::Value = serde_json::from_str(json).unwrap();
-//        let cfg = HumidifiCfg::try_from(&value).unwrap();
-//
-//        assert_eq!(cfg.market.to_string(), "FksffEqnBRixYGR791Qw2MgdU7zNCpHVFYBL4Fa4qVuH");
-//        assert_eq!(cfg.base_ta.to_string(), "C3FzbX9n1YD2dow2dCmEv5uNyyf22Gb3TLAEqGBhw5fY");
-//        assert_eq!(cfg.quote_ta.to_string(), "3RWFAQBRkNGq7CMGcTLK3kXDgFTe9jgMeFYqk8nHwcWh");
-//        assert_eq!(cfg.reserve_mints[0].to_string(), "So11111111111111111111111111111111111111112");
-//        assert_eq!(cfg.reserve_mints[1].to_string(), "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
-//    }
-//}
-//
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn valid_json() -> serde_json::Value {
+        serde_json::json!({
+            "pubkey": "So11111111111111111111111111111111111111112",
+            "accounts": [{
+                "market": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "base_ta": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                "quote_ta": "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj"
+            }],
+            "reserve_mints": [
+                ["So11111111111111111111111111111111111111112", 6],
+                ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 9]
+            ]
+        })
+    }
+
+    #[test]
+    fn humidifi_cfg_try_from_valid_json() {
+        let cfg = HumidifiCfg::try_from(&valid_json()).unwrap();
+
+        assert_eq!(cfg.pubkey, Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap());
+        assert_eq!(cfg.market, Pubkey::from_str("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap());
+        assert_eq!(cfg.reserve_mints[0].1, 6);
+        assert_eq!(cfg.reserve_mints[1].1, 9);
+    }
+
+    #[test]
+    fn humidifi_cfg_try_from_missing_pubkey() {
+        let mut json = valid_json();
+        json.as_object_mut().unwrap().remove("pubkey");
+
+        let result = HumidifiCfg::try_from(&json);
+        assert_eq!(result.unwrap_err(), "missing pubkey");
+    }
+
+    #[test]
+    fn humidifi_cfg_try_from_invalid_reserve_mints_count() {
+        let mut json = valid_json();
+        json["reserve_mints"] = serde_json::json!([["55555555555555555555555555555555", 6]]);
+
+        let result = HumidifiCfg::try_from(&json);
+        assert_eq!(result.unwrap_err(), "reserve_mints must have exactly 2 elements");
+    }
+}

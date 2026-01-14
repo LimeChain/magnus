@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Debug, path::Path, time::SystemTime};
+use std::{fmt::Debug, path::Path, time::SystemTime};
 
 use litesvm::{LiteSVM, types::TransactionMetadata};
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,6 @@ pub trait Amm: Adapter + Send + Sync + Debug {
     fn label(&self) -> String;
     fn program_id(&self) -> Pubkey;
     fn key(&self) -> Pubkey;
-    //fn clone_amm(&self) -> Box<dyn Amm + Send + Sync>;
     fn get_reserve_mints(&self) -> Vec<Pubkey>;
     fn get_accounts_to_update(&self) -> Vec<Pubkey>;
     fn update(&mut self, account_map: &AccountMap, slot: Option<u64>) -> eyre::Result<()>;
@@ -53,16 +52,7 @@ pub trait Amm: Adapter + Send + Sync + Debug {
     }
 
     fn get_accounts_len(&self) -> usize {
-        32 // Default to a large num to penalise no impl
-    }
-
-    /// The identifier of the underlying liquidity
-    ///
-    /// Example:
-    /// For RaydiumAmm uses Openbook market A this will return Some(A)
-    /// For Openbook market A, it will also return Some(A)
-    fn underlying_liquidities(&self) -> Option<HashSet<Pubkey>> {
-        None
+        32
     }
 
     fn is_active(&self) -> bool {
@@ -117,24 +107,28 @@ impl Chroot {
 
         mints.iter().for_each(|(mint, dec)| {
             let mint_acc = Chroot::mk_mint_acc(*dec);
-            chroot.load_accounts(vec![(*mint, mint_acc)]);
+            chroot.load_accounts(vec![(*mint, mint_acc)]).expect(&format!("unable to load account {}", *mint));
         });
 
         chroot
     }
 
-    pub fn load_program(&mut self, pubkey: Pubkey, program: impl AsRef<Path>) -> eyre::Result<Self> {
+    pub fn load_program(&mut self, pubkey: Pubkey, program: impl AsRef<Path>) -> eyre::Result<()> {
         self.svm.add_program_from_file(pubkey, &program)?;
 
-        Self
+        Ok(())
     }
 
-    pub fn load_accounts(&mut self, accs: Vec<(Pubkey, Account)>) {
-        accs.iter().try_for_each(|(pubkey, account)| self.svm.set_account(*pubkey, account.clone()));
+    pub fn load_accounts(&mut self, accs: Vec<(Pubkey, Account)>) -> eyre::Result<()> {
+        accs.iter().try_for_each(|(pubkey, account)| self.svm.set_account(*pubkey, account.clone()))?;
+
+        Ok(())
     }
 
-    pub fn update_accounts(&mut self, accs: Vec<(Pubkey, Account)>) {
-        self.load_accounts(accs);
+    pub fn update_accounts(&mut self, accs: Vec<(Pubkey, Account)>) -> eyre::Result<()> {
+        self.load_accounts(accs)?;
+
+        Ok(())
     }
 
     pub fn update_slot(&mut self, slot: u64) {
@@ -206,14 +200,3 @@ impl Chroot {
         amount_out
     }
 }
-
-// Each (Prop) AMM will have its own chroot (the alternative is to have one shared chroot but then we'll
-// need to manage the chroot's state with lock which isn't perfect)
-// Humidifi
-//  -> HumidifiCfg
-//  -> Chroot
-//    -> load_programs()
-//    -> load_accounts()
-//    -> setup_wallet()
-//
-//    -> update_accounts()

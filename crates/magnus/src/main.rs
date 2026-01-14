@@ -66,7 +66,8 @@ async fn run(cfg: Cfg) {
     #[cfg(feature = "metrics")]
     metrics_server::initialise_prometheus_description_metrics();
 
-    let client_http = std::sync::Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url));
+    let client_http = std::sync::Arc::new(solana_client::nonblocking::rpc_client::RpcClient::new(cfg.http_url.clone()));
+    let client_http_blocking = solana_client::rpc_client::RpcClient::new(cfg.http_url.clone());
     let client_geyser = GeyserGrpcClient::build_from_shared(cfg.yellowstone_url.unwrap_or_default())
         .expect("invalid grpc url")
         .tls_config(ClientTlsConfig::new().with_native_roots())
@@ -78,9 +79,9 @@ async fn run(cfg: Cfg) {
         .await
         .expect("unable to connect");
 
-    let pmms = bootstrap::load(&cfg.bootstrap_file).expect("unable to load bootstrap file");
+    let pmms = bootstrap::load(&cfg.bootstrap_file, &client_http_blocking).expect("unable to load bootstrap file");
     let markets = bootstrap::into_markets(pmms);
-    let account_map = bootstrap::acquire_account_map(&client_http, &markets).await.expect("unable to acquire account map");
+    let account_map = bootstrap::acquire_account_map(&client_http_blocking, &markets).expect("unable to acquire account map");
     debug!(?account_map);
 
     let bare_ctx = EmptyCtx;

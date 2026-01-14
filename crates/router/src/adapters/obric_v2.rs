@@ -13,7 +13,6 @@ use crate::{
 pub struct ObricV2Processor;
 impl DexProcessor for ObricV2Processor {}
 
-//this dex only supoort spltoken not support token_2022
 pub struct ObricV2Account<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority_pubkey: &'info AccountInfo<'info>,
@@ -82,7 +81,6 @@ pub fn swap<'a>(
         return Err(ErrorCode::InvalidProgramId.into());
     }
 
-    // log pool address
     swap_accounts.trading_pair.key().log();
 
     // check hop accounts & swap authority
