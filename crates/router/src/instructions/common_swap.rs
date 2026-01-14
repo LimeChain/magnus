@@ -221,6 +221,7 @@ fn distribute_swap<'a>(
         Dex::SolfiV2 => solfi_v2::swap,
         Dex::Tessera => tessera::swap,
         Dex::GoonFi => goonfi::swap,
+        Dex::BisonFi => bisonfi::swap,
     };
 
     swap_function(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_from, owner_seeds)

@@ -14,8 +14,9 @@ pub enum Dex {
     RaydiumCp,
     ObricV2,
     SolfiV2,
-    Zerofi,
-    Humidifi,
+    ZeroFi,
+    HumidiFi,
     Tessera,
-    Goonfi,
+    GoonFi,
+    BisonFi,
 }
