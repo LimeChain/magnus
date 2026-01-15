@@ -1,0 +1,148 @@
+[
+  {
+    "dex": "humidifi",
+    "pubkey": "FksffEqnBRixYGR791Qw2MgdU7zNCpHVFYBL4Fa4qVuH",
+    "accounts": [
+      {
+        "market": "FksffEqnBRixYGR791Qw2MgdU7zNCpHVFYBL4Fa4qVuH",
+        "base_ta": "C3FzbX9n1YD2dow2dCmEv5uNyyf22Gb3TLAEqGBhw5fY",
+        "quote_ta": "3RWFAQBRkNGq7CMGcTLK3kXDgFTe9jgMeFYqk8nHwcWh"
+      }
+    ],
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
+    ]
+  },
+  {
+    "dex": "humidifi",
+    "pubkey": "DB3sUCP2H4icbeKmK6yb6nUxU5ogbcRHtGuq7W2RoRwW",
+    "accounts": [
+      {
+        "market": "DB3sUCP2H4icbeKmK6yb6nUxU5ogbcRHtGuq7W2RoRwW",
+        "base_ta": "8BrVfsvzb1DZqCactbYWoKSv24AfsLBuXJqzpzYCwznF",
+        "quote_ta": "HsQcHFFNUVTp3MWrXYbuZchBNd4Pwk8636bKzLvpfYNR"
+      }
+    ],
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
+    ]
+  },
+  {
+    "dex": "humidifi",
+    "pubkey": "6n9VhCwQ7EwK6NqFDjnHPzEk6wZdRBTfh43RFgHQWHuQ",
+    "accounts": [
+      {
+        "market": "6n9VhCwQ7EwK6NqFDjnHPzEk6wZdRBTfh43RFgHQWHuQ",
+        "base_ta": "C3FzbX9n1YD2dow2dCmEv5uNyyf22Gb3TLAEqGBhw5fY",
+        "quote_ta": "3RWFAQBRkNGq7CMGcTLK3kXDgFTe9jgMeFYqk8nHwcWh"
+      }
+    ],
+    "reserve_mints": [
+      ["So11111111111111111111111111111111111111112", 9],
+      ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", 6]
+    ]
+  },
+  {
+    "dex": "humidifi",
+    "pubkey": "AvGeFw71N5sNfV97mZ1uNrHg4yfufRicCJUrS9j2ehTX",
+    "accounts": [
+      {
+        "market": "AvGeFw71N5sNfV97mZ1uNrHg4yfufRicCJUrS9j2ehTX",
+        "base_ta": "ECEPWwZJ1U1Vjsj1X5sUbZYETKMSCjYHuoTMVitCn64t",
+        "quote_ta": "FBWtVVvzsRuAAzVX8ua1hden9KmgPrC2rFijuwEn1ngJ"
+      }
+    ],
+    "reserve_mints": [
+      "So11111111111111111111111111111111111111112",
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  },
+  {
+    "dex": "tessera",
+    "pubkey": "FLckHLGMJy5gEoXWwcE68Nprde1D4araK4TGLw4pQq2n",
+    "accounts": [
+      {
+        "market": "FLckHLGMJy5gEoXWwcE68Nprde1D4araK4TGLw4pQq2n",
+        "base_ta": "5pVN5XZB8cYBjNLFrsBCPWkCQBan5K5Mq2dWGzwPgGJV",
+        "quote_ta": "9t4P5wMwfFkyn92Z7hf463qYKEZf8ERVZsGBEPNp8uJx",
+        "global_state": "8ekCy2jHHUbW2yeNGFWYJT9Hm9FW7SvZcZK66dSZCDiF"
+      }
+    ],
+    "reserve_mints": [
+      "So11111111111111111111111111111111111111112",
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  },
+  {
+    "dex": "goonfi",
+    "pubkey": "4uWuh9fC7rrZKrN8ZdJf69MN1e2S7FPpMqcsyY1aof6K",
+    "accounts": [
+      {
+        "market": "4uWuh9fC7rrZKrN8ZdJf69MN1e2S7FPpMqcsyY1aof6K",
+        "base_ta": "pKiUC9hDXv52xqU1p3BKypV9AQjAMgfZUGRnoBsdkKm",
+        "quote_ta": "Gsy5Zr7Vxn5KckAbduPHHGR1qzPJ4w3GSYmcinWAkhrC",
+        "blacklist": "7XqYD6DEGmDXooB1E8NNRWV9pWAmm1z6WYpsfjnABTUz"
+      }
+    ],
+    "reserve_mints": [
+      "So11111111111111111111111111111111111111112",
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  },
+  {
+    "dex": "solfi-v2",
+    "pubkey": "65ZHSArs5XxPseKQbB1B4r16vDxMWnCxHMzogDAqiDUc",
+    "accounts": [
+      {
+        "market": "65ZHSArs5XxPseKQbB1B4r16vDxMWnCxHMzogDAqiDUc",
+        "base_ta": "CRo8DBwrmd97DJfAnvCv96tZPL5Mktf2NZy2ZnhDer1A",
+        "quote_ta": "GhFfLFSprPpfoRaWakPMmJTMJBHuz6C694jYwxy2dAic",
+        "cfg": "FmxXDSR9WvpJTCh738D1LEDuhMoA8geCtZgHb3isy7Dp",
+        "oracle": "2ny7eGyZCoeEVTkNLf5HcnJFBKkyA4p4gcrtb3b8y8ou"
+      }
+    ],
+    "reserve_mints": [
+      "So11111111111111111111111111111111111111112",
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  },
+  {
+    "dex": "zerofi",
+    "pubkey": "2h9hhu3gxY9kCdXEwdTHV8yPAMYVoHgKopRyG1HbDwfi",
+    "accounts": [
+      {
+        "market": "2h9hhu3gxY9kCdXEwdTHV8yPAMYVoHgKopRyG1HbDwfi",
+        "vault_info_base": "7RHJ2WfexqUxy7SXfbNZRZDgZi3D9jtMAQp9VhfzpU8T",
+        "vault_base": "ERP5RTV6cWmoGrv7r9W2V5pbgDFSepc4j97qNnx1Jris",
+        "vault_info_quote": "Ef7zPqj4NuZHwaTczUTY9oRbxXrfZseUcKcqPaidCZ5W",
+        "vault_quote": "7wYJVD8iXmMQjND1fwi1hPr68QwruVVtirbotyJZXaVH"
+      }
+    ],
+    "reserve_mints": [
+      "So11111111111111111111111111111111111111112",
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  },
+  {
+    "dex": "obric-v2",
+    "pubkey": "BWBHrYqfcjAh5dSiRwzPnY4656cApXVXmkeDmAfwBKQG",
+    "accounts": [
+      {
+        "market": "BWBHrYqfcjAh5dSiRwzPnY4656cApXVXmkeDmAfwBKQG",
+        "second_ref_oracle": "GZsNmWKbqhMYtdSkkvMdEyQF9k5mLmP7tTKYWZjcHVPE",
+        "third_ref_oracle": "6YawcNeZ74tRyCv4UfGydYMr7eho7vbUR6ScVffxKAb3",
+        "reserve_x": "C3tPQ8TRcHybnPpR8KMASUVD3PukQRRHEsLwxorJMhgm",
+        "reserve_y": "AAamGhyPfpQJWfZHTq944NM1cFvoVLDrQxt7HGjeRQUS",
+        "ref_oracle": "J4HJYz4p7TRP96WVFky3vh7XryxoFehHjoRySUTeSeXw",
+        "x_price_feed": "J4HJYz4p7TRP96WVFky3vh7XryxoFehHjoRySUTeSeXw",
+        "y_price_feed": "J4HJYz4p7TRP96WVFky3vh7XryxoFehHjoRySUTeSeXw"
+      }
+    ],
+    "reserve_mints": [
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+    ]
+  }
+]

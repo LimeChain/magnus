@@ -25,8 +25,8 @@ pub struct SwapParams {
 pub struct GoonfiAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority: &'info AccountInfo<'info>,
-    pub swap_source_account: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_account: InterfaceAccount<'info, TokenAccount>,
+    pub swap_src_ta: InterfaceAccount<'info, TokenAccount>,
+    pub swap_dst_ta: InterfaceAccount<'info, TokenAccount>,
 
     pub goonfi_param: &'info AccountInfo<'info>,
 
@@ -57,8 +57,8 @@ impl<'info> GoonfiAccounts<'info> {
         Ok(Self {
             dex_program_id,
             swap_authority,
-            swap_source_account: InterfaceAccount::try_from(swap_source_account)?,
-            swap_destination_account: InterfaceAccount::try_from(swap_destination_account)?,
+            swap_src_ta: InterfaceAccount::try_from(swap_source_account)?,
+            swap_dst_ta: InterfaceAccount::try_from(swap_destination_account)?,
             goonfi_param,
             market,
             base_vault,
@@ -91,16 +91,16 @@ pub fn swap<'a>(
 
     swap_accounts.market.key().log();
 
-    before_check(swap_accounts.swap_authority, &swap_accounts.swap_source_account, swap_accounts.swap_destination_account.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
+    before_check(swap_accounts.swap_authority, &swap_accounts.swap_src_ta, swap_accounts.swap_dst_ta.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
 
     let quote_mint: Pubkey = swap_accounts.quote_vault.try_borrow_data()?[0..32].try_into().unwrap();
 
-    let is_bid = swap_accounts.swap_source_account.mint == quote_mint;
+    let is_bid = swap_accounts.swap_src_ta.mint == quote_mint;
 
     let (base_account, quote_account) = if is_bid {
-        (&swap_accounts.swap_destination_account, &swap_accounts.swap_source_account)
+        (&swap_accounts.swap_dst_ta, &swap_accounts.swap_src_ta)
     } else {
-        (&swap_accounts.swap_source_account, &swap_accounts.swap_destination_account)
+        (&swap_accounts.swap_src_ta, &swap_accounts.swap_dst_ta)
     };
 
     // Extract blacklist_bump from goonfi_param account
@@ -144,8 +144,8 @@ pub fn swap<'a>(
         amount_in,
         dex_processor,
         &account_infos,
-        &mut swap_accounts.swap_source_account,
-        &mut swap_accounts.swap_destination_account,
+        &mut swap_accounts.swap_src_ta,
+        &mut swap_accounts.swap_dst_ta,
         hop_accounts,
         instruction,
         hop,

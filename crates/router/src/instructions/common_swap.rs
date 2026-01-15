@@ -216,11 +216,12 @@ fn distribute_swap<'a>(
         Dex::RaydiumClV2 => raydium_cl_v2::swap,
         Dex::RaydiumCp => raydium_cp::swap,
         Dex::ObricV2 => obric_v2::swap,
-        Dex::Zerofi => zerofi::swap,
-        Dex::Humidifi => humidifi::swap,
+        Dex::ZeroFi => zerofi::swap,
+        Dex::HumidiFi => humidifi::swap,
         Dex::SolfiV2 => solfi_v2::swap,
         Dex::Tessera => tessera::swap,
-        Dex::Goonfi => goonfi::swap,
+        Dex::GoonFi => goonfi::swap,
+        Dex::BisonFi => bisonfi::swap,
     };
 
     swap_function(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_from, owner_seeds)

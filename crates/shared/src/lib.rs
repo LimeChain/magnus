@@ -73,6 +73,14 @@ pub mod pmm_goonfi {
     pub const ARGS_LEN: usize = 19;
 }
 
+pub mod pmm_bisonfi {
+    use anchor_lang::prelude::*;
+
+    declare_id!("BiSoNHVpsVZW2F7rx2eQ59yQwKxzU5NvBcmKshCSUypi");
+    pub const ACCOUNTS_LEN: usize = 10;
+    pub const ARGS_LEN: usize = 18;
+}
+
 pub mod spl_token {
     use anchor_lang::prelude::*;
 
@@ -109,10 +117,11 @@ pub enum Dex {
     RaydiumCp,
     ObricV2,
     SolfiV2,
-    Zerofi,
-    Humidifi,
+    ZeroFi,
+    HumidiFi,
     Tessera,
-    Goonfi,
+    GoonFi,
+    BisonFi,
 }
 
 impl std::fmt::Display for Dex {
@@ -124,17 +133,18 @@ impl std::fmt::Display for Dex {
             // pmms
             Dex::ObricV2 => f.write_str("obric-v2"),
             Dex::SolfiV2 => f.write_str("solfi-v2"),
-            Dex::Zerofi => f.write_str("zerofi"),
-            Dex::Humidifi => f.write_str("humidifi"),
+            Dex::ZeroFi => f.write_str("zerofi"),
+            Dex::HumidiFi => f.write_str("humidifi"),
             Dex::Tessera => f.write_str("tessera"),
-            Dex::Goonfi => f.write_str("goonfi"),
+            Dex::GoonFi => f.write_str("goonfi"),
+            Dex::BisonFi => f.write_str("bisonfi"),
         }
     }
 }
 
 impl Dex {
-    pub const ALL: [Dex; 8] = [Dex::RaydiumClV2, Dex::RaydiumCp, Dex::ObricV2, Dex::SolfiV2, Dex::Zerofi, Dex::Humidifi, Dex::Tessera, Dex::Goonfi];
-    pub const PMM: [Dex; 6] = [Dex::ObricV2, Dex::SolfiV2, Dex::Zerofi, Dex::Humidifi, Dex::Tessera, Dex::Goonfi];
+    pub const ALL: [Dex; 9] = [Dex::RaydiumClV2, Dex::RaydiumCp, Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
+    pub const PMM: [Dex; 7] = [Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
 
     pub fn program_id(&self) -> anchor_lang::solana_program::pubkey::Pubkey {
         match self {
@@ -142,12 +152,13 @@ impl Dex {
             Dex::RaydiumCp => crate::amm_raydium_cp::id(),
 
             // pmms
-            Dex::Humidifi => crate::pmm_humidifi::id(),
+            Dex::HumidiFi => crate::pmm_humidifi::id(),
             Dex::SolfiV2 => crate::pmm_solfi_v2::id(),
-            Dex::Zerofi => crate::pmm_zerofi::id(),
+            Dex::ZeroFi => crate::pmm_zerofi::id(),
             Dex::ObricV2 => crate::pmm_obric_v2::id(),
             Dex::Tessera => crate::pmm_tessera::id(),
-            Dex::Goonfi => crate::pmm_goonfi::id(),
+            Dex::GoonFi => crate::pmm_goonfi::id(),
+            Dex::BisonFi => crate::pmm_bisonfi::id(),
         }
     }
 }
@@ -161,10 +172,11 @@ impl FromStr for Dex {
             "raydium-cp" | "raydiumcp" => Ok(Dex::RaydiumCp),
             "obric-v2" | "obricv2" => Ok(Dex::ObricV2),
             "solfi-v2" | "solfiv2" => Ok(Dex::SolfiV2),
-            "zerofi" => Ok(Dex::Zerofi),
-            "humidifi" => Ok(Dex::Humidifi),
+            "zerofi" => Ok(Dex::ZeroFi),
+            "humidifi" => Ok(Dex::HumidiFi),
             "tessera" => Ok(Dex::Tessera),
-            "goonfi" => Ok(Dex::Goonfi),
+            "goonfi" => Ok(Dex::GoonFi),
+            "bisonfi" => Ok(Dex::BisonFi),
             _ => Err(format!("unknown dex '{}'", s)),
         }
     }
@@ -177,10 +189,11 @@ impl From<magnus_router_client::types::Dex> for Dex {
             magnus_router_client::types::Dex::RaydiumCp => Dex::RaydiumCp,
             magnus_router_client::types::Dex::ObricV2 => Dex::ObricV2,
             magnus_router_client::types::Dex::SolfiV2 => Dex::SolfiV2,
-            magnus_router_client::types::Dex::Zerofi => Dex::Zerofi,
-            magnus_router_client::types::Dex::Humidifi => Dex::Humidifi,
+            magnus_router_client::types::Dex::ZeroFi => Dex::ZeroFi,
+            magnus_router_client::types::Dex::HumidiFi => Dex::HumidiFi,
             magnus_router_client::types::Dex::Tessera => Dex::Tessera,
-            magnus_router_client::types::Dex::Goonfi => Dex::Goonfi,
+            magnus_router_client::types::Dex::GoonFi => Dex::GoonFi,
+            magnus_router_client::types::Dex::BisonFi => Dex::BisonFi,
         }
     }
 }
@@ -192,10 +205,11 @@ impl From<Dex> for magnus_router_client::types::Dex {
             Dex::RaydiumCp => magnus_router_client::types::Dex::RaydiumCp,
             Dex::ObricV2 => magnus_router_client::types::Dex::ObricV2,
             Dex::SolfiV2 => magnus_router_client::types::Dex::SolfiV2,
-            Dex::Zerofi => magnus_router_client::types::Dex::Zerofi,
-            Dex::Humidifi => magnus_router_client::types::Dex::Humidifi,
+            Dex::ZeroFi => magnus_router_client::types::Dex::ZeroFi,
+            Dex::HumidiFi => magnus_router_client::types::Dex::HumidiFi,
             Dex::Tessera => magnus_router_client::types::Dex::Tessera,
-            Dex::Goonfi => magnus_router_client::types::Dex::Goonfi,
+            Dex::GoonFi => magnus_router_client::types::Dex::GoonFi,
+            Dex::BisonFi => magnus_router_client::types::Dex::BisonFi,
         }
     }
 }

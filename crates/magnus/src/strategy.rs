@@ -37,49 +37,40 @@ impl BaseStrategy {
         BaseStrategy { markets: cfg.markets, api_server_rx: cfg.api_server_rx, tx: cfg.tx }
     }
 
-    /// Find the best market for swapping between two mints
-    /// Filters out markets with default Pubkey values and returns the market with best quote
-    pub fn fastest_route(&self, input_mint: Pubkey, output_mint: Pubkey, amount: u64) -> eyre::Result<Option<(Pubkey, Quote)>> {
-        let default_pubkey = Pubkey::default(); // 11111111111111111111111111111111
+    pub fn whole_swap_route(&self, input_mint: Pubkey, output_mint: Pubkey, amount: u64) -> eyre::Result<Option<(Pubkey, Quote)>> {
+        let default_pubkey = Pubkey::default();
 
-        let markets = self.markets.lock().unwrap();
-
-        // Find all markets that contain both input and output mints
+        let mut markets = self.markets.lock().unwrap();
+        info!("Markets: {:?}", markets);
         let matching_markets: Vec<(Pubkey, Quote)> = markets
-            .iter()
+            .iter_mut()
             .filter_map(|(market_key, amm)| {
-                // Skip if market key is default pubkey
-                if *market_key == default_pubkey {
-                    return None;
-                }
-
-                // Skip if market is not active
-                if !amm.is_active() {
+                if *market_key == default_pubkey || !amm.is_active() {
+                    info!("Market {} is inactive", market_key);
                     return None;
                 }
 
                 let reserve_mints = amm.get_reserve_mints();
-
-                // Filter out any default pubkeys in reserve mints
                 if reserve_mints.contains(&default_pubkey) {
+                    info!("Market {} has default pubkey as reserve", market_key);
                     return None;
                 }
 
-                // Check if this market has both our input and output mints
                 let has_input = reserve_mints.contains(&input_mint);
                 let has_output = reserve_mints.contains(&output_mint);
 
                 if has_input && has_output {
-                    let quote_params = QuoteParams {
-                        input_mint,
-                        output_mint,
-                        amount,
-                        swap_mode: crate::adapters::SwapMode::ExactIn, // Assuming ExactIn mode
-                    };
+                    let quote_params = QuoteParams { input_mint, output_mint, amount, swap_mode: crate::adapters::SwapMode::ExactIn };
 
                     match amm.quote(&quote_params) {
-                        Ok(quote) => Some((*market_key, quote)),
-                        Err(_) => None, // Skip markets that fail to quote
+                        Ok(quote) => {
+                            info!(?market_key, ?quote);
+                            Some((*market_key, quote))
+                        }
+                        Err(e) => {
+                            info!("Market {} failed to quote | {}", market_key, e);
+                            None
+                        }
                     }
                 } else {
                     None
@@ -87,7 +78,6 @@ impl BaseStrategy {
             })
             .collect();
 
-        // Find the market with the best output amount
         let best_market = matching_markets.into_iter().max_by_key(|(_, quote)| quote.out_amount);
 
         Ok(best_market)
@@ -106,7 +96,7 @@ impl Strategy for BaseStrategy {
                 // sent towards the API server
                 DispatchParams::Quote { params, response_tx } => {
                     // ..
-                    let quote = match self.fastest_route(params.input_mint, params.output_mint, params.amount)? {
+                    let quote = match self.whole_swap_route(params.input_mint, params.output_mint, params.amount)? {
                         Some(q) => q.1,
                         None => {
                             info!("no route found");
@@ -131,7 +121,6 @@ impl Strategy for BaseStrategy {
                 // craft the instruction data payload and send the tx/bundles towards
                 // an RPC
                 DispatchParams::Swap { params, response_tx } => {
-                    // ..
                     if self
                         .tx
                         .send(WrappedSwapAndAccountMetas {

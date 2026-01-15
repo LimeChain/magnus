@@ -8,7 +8,7 @@ use secrecy::SecretString;
     long_about = None
 )]
 pub struct Args {
-    #[arg(long, env = "HTTP_URL", default_value = "http://127.0.0.1:8899")]
+    #[arg(long, env = "HTTP_URL", default_value = "https://api.mainnet-beta.solana.com")]
     pub http_url: SecretString,
 
     #[arg(long, env = "YELLOWSTONE_URL")]
@@ -17,8 +17,8 @@ pub struct Args {
     #[arg(long, env = "YELLOWSTONE_X_TOKEN")]
     pub yellowstone_x_token: Option<SecretString>,
 
-    #[arg(long, env = "BOOTSTRAP_FILE")]
-    pub bootstrap_file: Option<String>,
+    #[arg(long, env = "BOOTSTRAP_FILE", default_value = "cfg/payloads/pmms.json")]
+    pub bootstrap_file: String,
 
     #[arg(long, env = "API_SERVER_HOST", default_value = "0.0.0.0:19000")]
     pub api_server_host: String,

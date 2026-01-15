@@ -12,14 +12,15 @@ pub const SA_AUTHORITY_SEED: &[&[&[u8]]] = &[&[SEED_SA, &[BUMP_SA]]];
 pub const ACTUAL_IN_LOWER_BOUND_NUM: u128 = 90; // 90%
 pub const ACTUAL_IN_LOWER_BOUND_DEN: u128 = 100; // denominator for percentage
 
+pub const ZERO_ADDRESS: Pubkey = Pubkey::new_from_array([0u8; 32]);
+
 pub const SWAP_SELECTOR: &[u8; 8] = &[248, 198, 158, 145, 225, 117, 135, 200];
 pub const SWAP2_SELECTOR: &[u8; 8] = &[65, 75, 63, 76, 235, 91, 91, 136];
 pub const SWAPV2_SELECTOR: &[u8; 8] = &[43, 4, 237, 11, 26, 201, 30, 98];
 pub const CPSWAP_SELECTOR: &[u8; 8] = &[143, 190, 90, 218, 196, 30, 51, 222];
 pub const TESSERA_SWAP_SELECTOR: &[u8; 1] = &[16];
 pub const GOONFI_SWAP_SELECTOR: &[u8; 1] = &[2];
-
-pub const ZERO_ADDRESS: Pubkey = Pubkey::new_from_array([0u8; 32]);
+pub const BISONFI_SWAP_SELECTOR: u8 = 0x2;
 
 pub const HUMIDIFI_SWAP_SELECTOR: u8 = 0x4;
 const HUMIDIFI_IX_DATA_KEY_SEED: [u8; 32] =

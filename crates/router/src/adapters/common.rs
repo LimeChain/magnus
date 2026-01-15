@@ -70,25 +70,20 @@ pub fn invoke_process<'info, T: DexProcessor>(
     proxy_swap: bool,
     owner_seeds: Option<&[&[&[u8]]]>,
 ) -> Result<u64> {
-    // get before balances
     let before_source_balance = swap_source_token.amount;
     let before_destination_balance = swap_destination_token.amount;
 
-    // before invoke hook
     let before_sa_authority_lamports = dex_processor.before_invoke(account_infos)?;
 
-    // Harden: prevent CPI from touching unexpected SA-owned token accounts
+    // prevent CPI from touching unexpected SA-owned token accounts
     if proxy_swap || hop > 0 {
         enforce_sa_token_allowlist(account_infos, &[swap_source_token.key(), swap_destination_token.key()])?;
     }
 
-    // execute instruction
     execute_instruction(&instruction, account_infos, proxy_swap, hop, owner_seeds)?;
 
-    // after invoke hook
     dex_processor.after_invoke(account_infos, hop, owner_seeds, before_sa_authority_lamports)?;
 
-    // post swap check
     post_swap_check(swap_source_token, swap_destination_token, hop_accounts, accounts_len, offset, amount_in, before_source_balance, before_destination_balance)
 }
 
