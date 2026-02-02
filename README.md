@@ -2,7 +2,7 @@ _The repository is very much a work in progress._
 
 # Magnus
 
-Magnus is a modular Solana solver aimed at unifying the components required to integrate with any of the liquidity sources deployed on Solana. This includes AMMs, Prop AMMs, and Aggregators.
+Magnus is a modular Solana aggregator aimed at unifying the components required to integrate with any of the liquidity sources deployed on Solana. This includes AMMs, Prop AMMs, and adjacent Aggregators.
 
 The implementation aims to be discrete enough to work both as a standalone, runnable binary, and a plug-and-play framework.
 
@@ -28,11 +28,11 @@ Check out [pmm-sim](https://github.com/limechain/pmm-sim) if you're interested i
 
 ---
 
-The solver exposes the following endpoints used to trigger a quote or swap:
+The aggregator exposes the following endpoints used to trigger a quote or swap:
 
 ```txt
 => `/api/v1/quote`
 => `/api/v1/swap`
 ```
 
-The API Server's endpoints docs can be found once the solver's been span-up, at `0:0:0:0:19000`.
+The API Server's endpoints docs can be found once the aggregator's been span-up, at `0:0:0:0:19000`.
