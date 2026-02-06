@@ -2,5 +2,4 @@
 .zed/
 target/
 runbooks/
-node_modules/
 txtx.yml

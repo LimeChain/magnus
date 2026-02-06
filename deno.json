@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@codama/nodes-from-anchor": "npm:@codama/nodes-from-anchor@^1.2.9",
+    "@codama/renderers-rust": "npm:@codama/renderers-rust@^1.2.7",
+    "codama": "npm:codama@^1.3.7"
+  }
+}
