@@ -36,3 +36,7 @@ The aggregator exposes the following endpoints used to trigger a quote or swap:
 ```
 
 The API Server's endpoints docs can be found once the aggregator's been span-up, at `0:0:0:0:19000`.
+
+---
+
+License: MIT
