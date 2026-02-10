@@ -87,7 +87,7 @@ pub fn swap<'a>(
 
     before_check(swap_accounts.swap_authority, &swap_accounts.swap_src_ta, swap_accounts.swap_dst_ta.key(), hop_accounts, hop, proxy_swap, owner_seeds)?;
 
-    let b_to_a = swap_accounts.swap_src_ta.mint == swap_accounts.market_base_ta.mint;
+    let b_to_a = swap_accounts.swap_src_ta.mint != swap_accounts.market_base_ta.mint;
     let (user_base_ta, user_quote_ta) = if b_to_a {
         (&swap_accounts.swap_dst_ta, &swap_accounts.swap_src_ta)
     } else {
@@ -103,8 +103,8 @@ pub fn swap<'a>(
     let accounts = vec![
         AccountMeta::new(swap_accounts.swap_authority.key(), true),
         AccountMeta::new(swap_accounts.market.key(), false),
-        AccountMeta::new(swap_accounts.market_quote_ta.key(), false),
         AccountMeta::new(swap_accounts.market_base_ta.key(), false),
+        AccountMeta::new(swap_accounts.market_quote_ta.key(), false),
         AccountMeta::new(user_base_ta.key(), false),
         AccountMeta::new(user_quote_ta.key(), false),
         AccountMeta::new_readonly(swap_accounts.base_token_program.key(), false),
@@ -115,8 +115,8 @@ pub fn swap<'a>(
     let account_infos = vec![
         swap_accounts.swap_authority.to_account_info(),
         swap_accounts.market.to_account_info(),
-        swap_accounts.market_quote_ta.to_account_info(),
         swap_accounts.market_base_ta.to_account_info(),
+        swap_accounts.market_quote_ta.to_account_info(),
         user_base_ta.to_account_info(),
         user_quote_ta.to_account_info(),
         swap_accounts.base_token_program.to_account_info(),
