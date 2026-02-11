@@ -81,6 +81,14 @@ pub mod pmm_bisonfi {
     pub const ARGS_LEN: usize = 18;
 }
 
+pub mod pmm_alphaq {
+    use anchor_lang::prelude::*;
+
+    declare_id!("ALPHAQmeA7bjrVuccPsYPiCvsi428SNwte66Srvs4pHA");
+    pub const ACCOUNTS_LEN: usize = 13;
+    pub const ARGS_LEN: usize = 18;
+}
+
 pub mod spl_token {
     use anchor_lang::prelude::*;
 
@@ -122,6 +130,7 @@ pub enum Dex {
     Tessera,
     GoonFi,
     BisonFi,
+    AlphaQ,
 }
 
 impl std::fmt::Display for Dex {
@@ -138,13 +147,14 @@ impl std::fmt::Display for Dex {
             Dex::Tessera => f.write_str("tessera"),
             Dex::GoonFi => f.write_str("goonfi"),
             Dex::BisonFi => f.write_str("bisonfi"),
+            Dex::AlphaQ => f.write_str("alphaq"),
         }
     }
 }
 
 impl Dex {
-    pub const ALL: [Dex; 9] = [Dex::RaydiumClV2, Dex::RaydiumCp, Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
-    pub const PMM: [Dex; 7] = [Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
+    pub const ALL: [Dex; 10] = [Dex::RaydiumClV2, Dex::RaydiumCp, Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi, Dex::AlphaQ];
+    pub const PMM: [Dex; 8] = [Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi, Dex::AlphaQ];
 
     pub fn program_id(&self) -> anchor_lang::solana_program::pubkey::Pubkey {
         match self {
@@ -159,6 +169,7 @@ impl Dex {
             Dex::Tessera => crate::pmm_tessera::id(),
             Dex::GoonFi => crate::pmm_goonfi::id(),
             Dex::BisonFi => crate::pmm_bisonfi::id(),
+            Dex::AlphaQ => crate::pmm_alphaq::id(),
         }
     }
 }
@@ -177,6 +188,7 @@ impl FromStr for Dex {
             "tessera" => Ok(Dex::Tessera),
             "goonfi" => Ok(Dex::GoonFi),
             "bisonfi" => Ok(Dex::BisonFi),
+            "alphaq" => Ok(Dex::AlphaQ),
             _ => Err(format!("unknown dex '{}'", s)),
         }
     }
@@ -194,6 +206,7 @@ impl From<magnus_router_client::types::Dex> for Dex {
             magnus_router_client::types::Dex::Tessera => Dex::Tessera,
             magnus_router_client::types::Dex::GoonFi => Dex::GoonFi,
             magnus_router_client::types::Dex::BisonFi => Dex::BisonFi,
+            magnus_router_client::types::Dex::AlphaQ => Dex::AlphaQ,
         }
     }
 }
@@ -210,6 +223,7 @@ impl From<Dex> for magnus_router_client::types::Dex {
             Dex::Tessera => magnus_router_client::types::Dex::Tessera,
             Dex::GoonFi => magnus_router_client::types::Dex::GoonFi,
             Dex::BisonFi => magnus_router_client::types::Dex::BisonFi,
+            Dex::AlphaQ => magnus_router_client::types::Dex::AlphaQ,
         }
     }
 }

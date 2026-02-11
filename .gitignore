@@ -1,5 +1,6 @@
 .surfpool/
 .zed/
+.direnv/
 target/
 runbooks/
 txtx.yml
