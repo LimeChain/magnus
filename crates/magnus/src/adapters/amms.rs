@@ -77,9 +77,6 @@ pub enum Target {
     Jupiter,
     DFlow,
 
-    // direct quote source for the AlphaQ DEX
-    AlphaQ,
-
     // get the best pricing from any of the integrated AMMs
     // perhaps we can get even more granular here and segment into (prop|public) AMMs
     #[serde(rename = "amms")]

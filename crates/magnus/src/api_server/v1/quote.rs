@@ -12,7 +12,6 @@ use crate::{
     adapters::{
         IntQuoteResponse, QuoteParams, SwapMode,
         aggregators::{Aggregator, dflow::DFlow, jupiter::Jupiter},
-        alphaq::AlphaQ,
         amms::Target,
     },
     api_server::ServerState,
@@ -79,14 +78,6 @@ pub async fn quote_handler(params: web::Query<QuoteUserParam>, state: web::Data<
 
             match (DFlow {}.quote(&param).await) {
                 Ok(dflow) => HttpResponse::Ok().json(dflow),
-                Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
-            }
-        }
-        Target::AlphaQ => {
-            let param = QuoteParams { input_mint, output_mint, amount: params.amount, swap_mode: SwapMode::ExactIn };
-
-            match AlphaQ::quote(&param).await {
-                Ok(alphaq) => HttpResponse::Ok().json(alphaq),
                 Err(err) => HttpResponse::InternalServerError().json(json!({"error": err.to_string()})),
             }
         }
