@@ -76,6 +76,7 @@ pub enum Target {
     // poke a particular aggregator for quote/swap
     Jupiter,
     DFlow,
+    AlphaQ,
 
     // get the best pricing from any of the integrated AMMs
     // perhaps we can get even more granular here and segment into (prop|public) AMMs

@@ -6,6 +6,7 @@ use utoipa::ToSchema;
 use crate::adapters::amms::Target;
 
 pub mod aggregators;
+pub mod alphaq;
 pub mod amms;
 pub mod helpers;
 

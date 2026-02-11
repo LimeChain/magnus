@@ -19,4 +19,5 @@ pub enum Dex {
     Tessera,
     GoonFi,
     BisonFi,
+    AlphaQ,
 }

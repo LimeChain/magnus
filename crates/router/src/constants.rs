@@ -21,6 +21,7 @@ pub const CPSWAP_SELECTOR: &[u8; 8] = &[143, 190, 90, 218, 196, 30, 51, 222];
 pub const TESSERA_SWAP_SELECTOR: &[u8; 1] = &[16];
 pub const GOONFI_SWAP_SELECTOR: &[u8; 1] = &[2];
 pub const BISONFI_SWAP_SELECTOR: u8 = 0x2;
+pub const ALPHAQ_SWAP_SELECTOR: u8 = 0x0c;
 
 pub const HUMIDIFI_SWAP_SELECTOR: u8 = 0x4;
 const HUMIDIFI_IX_DATA_KEY_SEED: [u8; 32] =

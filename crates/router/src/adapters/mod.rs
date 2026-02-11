@@ -1,3 +1,4 @@
+pub mod alphaq;
 pub mod bisonfi;
 pub mod common;
 pub mod goonfi;
