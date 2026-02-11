@@ -76,6 +76,8 @@ pub enum Target {
     // poke a particular aggregator for quote/swap
     Jupiter,
     DFlow,
+
+    // direct quote source for the AlphaQ DEX
     AlphaQ,
 
     // get the best pricing from any of the integrated AMMs

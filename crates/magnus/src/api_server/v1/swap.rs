@@ -54,9 +54,10 @@ pub async fn swap_handler(params: web::Json<SwapUserParam>, state: web::Data<Ser
     info!(?keypair);
 
     match params.target {
-        Target::Aggregators | Target::Jupiter | Target::DFlow | Target::AlphaQ => {
+        Target::Aggregators | Target::Jupiter | Target::DFlow => {
             HttpResponse::NotImplemented().json(serde_json::json!({"error": "can't swap through the aggregators"}))
         }
+        Target::AlphaQ => HttpResponse::NotImplemented().json(serde_json::json!({"error": "can't swap through AlphaQ from this endpoint yet"})),
         Target::AMMs => {
             let (response_tx, response_rx) = oneshot::channel::<DispatchResponse>();
             let dispatch = DispatchParams::Swap { params: SwapParams::default(), response_tx };
