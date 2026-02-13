@@ -20,10 +20,11 @@ pub const SWAPV2_SELECTOR: &[u8; 8] = &[43, 4, 237, 11, 26, 201, 30, 98];
 pub const CPSWAP_SELECTOR: &[u8; 8] = &[143, 190, 90, 218, 196, 30, 51, 222];
 pub const TESSERA_SWAP_SELECTOR: &[u8; 1] = &[16];
 pub const GOONFI_SWAP_SELECTOR: &[u8; 1] = &[2];
-pub const BISONFI_SWAP_SELECTOR: u8 = 0x2;
+pub const BISONFI_SWAP_SELECTOR: &[u8; 1] = &[0x2];
 
-pub const HUMIDIFI_SWAP_SELECTOR: u8 = 0x4;
-pub const HUMIDIFI_SWAPV2_SELECTOR: u8 = 0x0f;
+pub const HUMIDIFI_SWAP_SELECTOR: &[u8; 1] = &[0x4];
+pub const HUMIDIFI_SWAPV2_SELECTOR: &[u8; 1] = &[0x0f];
+pub const HUMIDIFI_SWAPV3_SELECTOR: &[u8; 1] = &[0x14];
 
 const HUMIDIFI_IX_DATA_KEY_SEED: [u8; 32] =
     [58, 255, 47, 255, 226, 186, 235, 195, 123, 131, 245, 8, 11, 233, 132, 219, 225, 40, 79, 119, 169, 121, 169, 58, 197, 1, 122, 9, 216, 164, 149, 97];

@@ -2,13 +2,13 @@ use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
-use magnus_shared::pmm_humidifi::{self, ACCOUNTS_LEN, ACCOUNTS_LEN_V2, ARGS_LEN, ARGS_LEN_V2};
+use magnus_shared::pmm_humidifi::{self, ACCOUNTS_LEN, ACCOUNTS_LEN_V2V3, ARGS_LEN, ARGS_LEN_V2V3};
 
 use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, HUMIDIFI_IX_DATA_KEY, HUMIDIFI_SWAPV2_SELECTOR, HUMIDIFI_SWAP_SELECTOR,
+    HopAccounts, HUMIDIFI_IX_DATA_KEY, HUMIDIFI_SWAPV2_SELECTOR, HUMIDIFI_SWAPV3_SELECTOR, HUMIDIFI_SWAP_SELECTOR,
 };
 
 pub struct HumidifiProcessor;
@@ -146,7 +146,7 @@ pub fn swap<'a>(
 
     let mut data: Vec<u8> = Vec::with_capacity(ARGS_LEN);
     data.extend_from_slice(&swap_params.try_to_vec()?);
-    data.extend_from_slice(&[HUMIDIFI_SWAP_SELECTOR]);
+    data.extend_from_slice(HUMIDIFI_SWAP_SELECTOR);
     obfuscate_instruction_data(&mut data);
 
     let accounts = vec![
@@ -234,7 +234,7 @@ impl<'info> HumidifiAccountsV2<'info> {
             token1_mint,
             add1,
             vote,
-        ]: &[AccountInfo<'info>; ACCOUNTS_LEN_V2] = array_ref![accounts, offset, ACCOUNTS_LEN_V2];
+        ]: &[AccountInfo<'info>; ACCOUNTS_LEN_V2V3] = array_ref![accounts, offset, ACCOUNTS_LEN_V2V3];
 
         Ok(Self {
             dex_program_id,
@@ -257,7 +257,7 @@ impl<'info> HumidifiAccountsV2<'info> {
     }
 }
 
-pub fn swap_v2<'a>(
+fn swap_v2_v3<'a>(
     remaining_accounts: &'a [AccountInfo<'a>],
     amount_in: u64,
     offset: &mut usize,
@@ -265,10 +265,11 @@ pub fn swap_v2<'a>(
     hop: usize,
     proxy_swap: bool,
     owner_seeds: Option<&[&[&[u8]]]>,
+    selector: &[u8; 1],
 ) -> Result<u64> {
-    msg!("Dex::HumidifiV2 amount_in: {}, offset: {}", amount_in, offset);
+    msg!("Dex::HumidifiV2V3 amount_in: {}, offset: {}", amount_in, offset);
 
-    require!(remaining_accounts.len() >= *offset + ACCOUNTS_LEN_V2, ErrorCode::InvalidAccountsLength);
+    require!(remaining_accounts.len() >= *offset + ACCOUNTS_LEN_V2V3, ErrorCode::InvalidAccountsLength);
 
     let mut swap_accounts = HumidifiAccountsV2::parse_accounts(remaining_accounts, *offset)?;
 
@@ -311,9 +312,9 @@ pub fn swap_v2<'a>(
 
     let swap_params = SwapParams { swap_id, amount_in, is_base_to_quote: !is_base_in as u8, padding: [0; 7] };
 
-    let mut data: Vec<u8> = Vec::with_capacity(ARGS_LEN_V2);
+    let mut data: Vec<u8> = Vec::with_capacity(ARGS_LEN_V2V3);
     data.extend_from_slice(&swap_params.try_to_vec()?);
-    data.extend_from_slice(&[HUMIDIFI_SWAPV2_SELECTOR]);
+    data.extend_from_slice(selector);
     obfuscate_instruction_data(&mut data);
 
     let accounts = vec![
@@ -363,10 +364,34 @@ pub fn swap_v2<'a>(
         instruction,
         hop,
         offset,
-        ACCOUNTS_LEN_V2,
+        ACCOUNTS_LEN_V2V3,
         proxy_swap,
         owner_seeds,
     )?;
 
     Ok(amount_out)
+}
+
+pub fn swap_v2<'a>(
+    remaining_accounts: &'a [AccountInfo<'a>],
+    amount_in: u64,
+    offset: &mut usize,
+    hop_accounts: &mut HopAccounts,
+    hop: usize,
+    proxy_swap: bool,
+    owner_seeds: Option<&[&[&[u8]]]>,
+) -> Result<u64> {
+    swap_v2_v3(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_swap, owner_seeds, HUMIDIFI_SWAPV2_SELECTOR)
+}
+
+pub fn swap_v3<'a>(
+    remaining_accounts: &'a [AccountInfo<'a>],
+    amount_in: u64,
+    offset: &mut usize,
+    hop_accounts: &mut HopAccounts,
+    hop: usize,
+    proxy_swap: bool,
+    owner_seeds: Option<&[&[&[u8]]]>,
+) -> Result<u64> {
+    swap_v2_v3(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_swap, owner_seeds, HUMIDIFI_SWAPV3_SELECTOR)
 }
