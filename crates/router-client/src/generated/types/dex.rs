@@ -16,6 +16,7 @@ pub enum Dex {
     SolfiV2,
     ZeroFi,
     HumidiFi,
+    HumidiFiSwapV2,
     Tessera,
     GoonFi,
     BisonFi,
