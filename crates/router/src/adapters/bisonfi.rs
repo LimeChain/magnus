@@ -97,7 +97,7 @@ pub fn swap<'a>(
     let swap_params = SwapParams { amount_in, amount_out_min: 0, b_to_a };
 
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.extend_from_slice(&[BISONFI_SWAP_SELECTOR]);
+    data.extend_from_slice(BISONFI_SWAP_SELECTOR);
     data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
