@@ -23,6 +23,8 @@ pub const GOONFI_SWAP_SELECTOR: &[u8; 1] = &[2];
 pub const BISONFI_SWAP_SELECTOR: u8 = 0x2;
 
 pub const HUMIDIFI_SWAP_SELECTOR: u8 = 0x4;
+pub const HUMIDIFI_SWAPV2_SELECTOR: u8 = 0x0f;
+
 const HUMIDIFI_IX_DATA_KEY_SEED: [u8; 32] =
     [58, 255, 47, 255, 226, 186, 235, 195, 123, 131, 245, 8, 11, 233, 132, 219, 225, 40, 79, 119, 169, 121, 169, 58, 197, 1, 122, 9, 216, 164, 149, 97];
 pub const HUMIDIFI_IX_DATA_KEY: u64 = u64::from_le_bytes([

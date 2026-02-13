@@ -218,6 +218,7 @@ fn distribute_swap<'a>(
         Dex::ObricV2 => obric_v2::swap,
         Dex::ZeroFi => zerofi::swap,
         Dex::HumidiFi => humidifi::swap,
+        Dex::HumidiFiSwapV2 => humidifi::swap_v2,
         Dex::SolfiV2 => solfi_v2::swap,
         Dex::Tessera => tessera::swap,
         Dex::GoonFi => goonfi::swap,

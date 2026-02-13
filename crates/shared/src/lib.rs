@@ -47,6 +47,8 @@ pub mod pmm_humidifi {
     declare_id!("9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp");
     pub const ACCOUNTS_LEN: usize = 11;
     pub const ARGS_LEN: usize = 25;
+    pub const ACCOUNTS_LEN_V2: usize = 16;
+    pub const ARGS_LEN_V2: usize = 25;
 }
 
 pub mod pmm_zerofi {
@@ -119,6 +121,7 @@ pub enum Dex {
     SolfiV2,
     ZeroFi,
     HumidiFi,
+    HumidiFiSwapV2,
     Tessera,
     GoonFi,
     BisonFi,
@@ -135,6 +138,7 @@ impl std::fmt::Display for Dex {
             Dex::SolfiV2 => f.write_str("solfi-v2"),
             Dex::ZeroFi => f.write_str("zerofi"),
             Dex::HumidiFi => f.write_str("humidifi"),
+            Dex::HumidiFiSwapV2 => f.write_str("humidifi-swap-v2"),
             Dex::Tessera => f.write_str("tessera"),
             Dex::GoonFi => f.write_str("goonfi"),
             Dex::BisonFi => f.write_str("bisonfi"),
@@ -143,8 +147,9 @@ impl std::fmt::Display for Dex {
 }
 
 impl Dex {
-    pub const ALL: [Dex; 9] = [Dex::RaydiumClV2, Dex::RaydiumCp, Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
-    pub const PMM: [Dex; 7] = [Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
+    pub const ALL: [Dex; 10] =
+        [Dex::RaydiumClV2, Dex::RaydiumCp, Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::HumidiFiSwapV2, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
+    pub const PMM: [Dex; 8] = [Dex::ObricV2, Dex::SolfiV2, Dex::ZeroFi, Dex::HumidiFi, Dex::HumidiFiSwapV2, Dex::Tessera, Dex::GoonFi, Dex::BisonFi];
 
     pub fn program_id(&self) -> anchor_lang::solana_program::pubkey::Pubkey {
         match self {
@@ -152,7 +157,7 @@ impl Dex {
             Dex::RaydiumCp => crate::amm_raydium_cp::id(),
 
             // pmms
-            Dex::HumidiFi => crate::pmm_humidifi::id(),
+            Dex::HumidiFi | Dex::HumidiFiSwapV2 => crate::pmm_humidifi::id(),
             Dex::SolfiV2 => crate::pmm_solfi_v2::id(),
             Dex::ZeroFi => crate::pmm_zerofi::id(),
             Dex::ObricV2 => crate::pmm_obric_v2::id(),
@@ -174,6 +179,7 @@ impl FromStr for Dex {
             "solfi-v2" | "solfiv2" => Ok(Dex::SolfiV2),
             "zerofi" => Ok(Dex::ZeroFi),
             "humidifi" => Ok(Dex::HumidiFi),
+            "humidifi-swap-v2" | "humidifiswapv2" => Ok(Dex::HumidiFiSwapV2),
             "tessera" => Ok(Dex::Tessera),
             "goonfi" => Ok(Dex::GoonFi),
             "bisonfi" => Ok(Dex::BisonFi),
@@ -191,6 +197,7 @@ impl From<magnus_router_client::types::Dex> for Dex {
             magnus_router_client::types::Dex::SolfiV2 => Dex::SolfiV2,
             magnus_router_client::types::Dex::ZeroFi => Dex::ZeroFi,
             magnus_router_client::types::Dex::HumidiFi => Dex::HumidiFi,
+            magnus_router_client::types::Dex::HumidiFiSwapV2 => Dex::HumidiFiSwapV2,
             magnus_router_client::types::Dex::Tessera => Dex::Tessera,
             magnus_router_client::types::Dex::GoonFi => Dex::GoonFi,
             magnus_router_client::types::Dex::BisonFi => Dex::BisonFi,
@@ -207,6 +214,7 @@ impl From<Dex> for magnus_router_client::types::Dex {
             Dex::SolfiV2 => magnus_router_client::types::Dex::SolfiV2,
             Dex::ZeroFi => magnus_router_client::types::Dex::ZeroFi,
             Dex::HumidiFi => magnus_router_client::types::Dex::HumidiFi,
+            Dex::HumidiFiSwapV2 => magnus_router_client::types::Dex::HumidiFiSwapV2,
             Dex::Tessera => magnus_router_client::types::Dex::Tessera,
             Dex::GoonFi => magnus_router_client::types::Dex::GoonFi,
             Dex::BisonFi => magnus_router_client::types::Dex::BisonFi,
