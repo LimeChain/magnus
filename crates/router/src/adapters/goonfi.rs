@@ -2,13 +2,13 @@ use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
-use magnus_shared::pmm_goonfi::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::pmm_goonfi::{self, ACCOUNTS_LEN, ARGS_LEN, SWAP_SELECTOR};
 
 use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, GOONFI_SWAP_SELECTOR,
+    HopAccounts,
 };
 
 pub struct GoonfiProcessor;
@@ -25,17 +25,15 @@ pub struct SwapParams {
 pub struct GoonfiAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority: &'info AccountInfo<'info>,
+    pub market: &'info AccountInfo<'info>,
     pub swap_src_ta: InterfaceAccount<'info, TokenAccount>,
     pub swap_dst_ta: InterfaceAccount<'info, TokenAccount>,
-
-    pub goonfi_param: &'info AccountInfo<'info>,
-
-    pub market: &'info AccountInfo<'info>,
     pub base_vault: &'info AccountInfo<'info>,
     pub quote_vault: &'info AccountInfo<'info>,
     pub blacklist: &'info AccountInfo<'info>,
     pub sysvar_instructions: &'info AccountInfo<'info>,
     pub token_program: Interface<'info, TokenInterface>,
+    pub goonfi_param: &'info AccountInfo<'info>,
 }
 
 impl<'info> GoonfiAccounts<'info> {
@@ -43,29 +41,29 @@ impl<'info> GoonfiAccounts<'info> {
         let [
             dex_program_id,
             swap_authority,
+            market,
             swap_source_account,
             swap_destination_account,
-            goonfi_param,
-            market,
             base_vault,
             quote_vault,
             blacklist,
             sysvar_instructions,
             token_program,
+            goonfi_param,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
 
         Ok(Self {
             dex_program_id,
             swap_authority,
+            market,
             swap_src_ta: InterfaceAccount::try_from(swap_source_account)?,
             swap_dst_ta: InterfaceAccount::try_from(swap_destination_account)?,
-            goonfi_param,
-            market,
             base_vault,
             quote_vault,
             blacklist,
             sysvar_instructions,
             token_program: Interface::try_from(token_program)?,
+            goonfi_param,
         })
     }
 }
@@ -112,7 +110,7 @@ pub fn swap<'a>(
     let swap_params: SwapParams = SwapParams { is_user_bid: is_bid, bump: blacklist_bump, amount_in, minimum_amount_out: 1 };
 
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.extend_from_slice(GOONFI_SWAP_SELECTOR);
+    data.extend_from_slice(SWAP_SELECTOR);
     data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let mut accounts = Vec::with_capacity(ACCOUNTS_LEN - 2);

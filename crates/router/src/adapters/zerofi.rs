@@ -1,6 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
+use borsh::{BorshDeserialize, BorshSerialize};
 use magnus_shared::pmm_zerofi::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use super::common::DexProcessor;
@@ -13,17 +14,23 @@ use crate::{
 pub struct ZeroFiProcessor;
 impl DexProcessor for ZeroFiProcessor {}
 
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct SwapParams {
+    pub discriminator: u8,
+    pub amount_in: u64,
+    pub desired_output: u64,
+}
+
 pub struct ZeroFiAccount<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
-    pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
     pub pair: &'info AccountInfo<'info>,
     pub vault_info_base: &'info AccountInfo<'info>,
     pub vault_base: InterfaceAccount<'info, TokenAccount>,
     pub vault_info_quote: &'info AccountInfo<'info>,
     pub vault_quote: InterfaceAccount<'info, TokenAccount>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_authority_pubkey: &'info AccountInfo<'info>,
     pub token_program: Interface<'info, TokenInterface>,
     pub sysvar_instructions: &'info AccountInfo<'info>,
 }
@@ -32,27 +39,27 @@ impl<'info> ZeroFiAccount<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
         let [
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
             pair,
             vault_info_base,
             vault_base,
             vault_info_quote,
             vault_quote,
+            swap_source_token,
+            swap_destination_token,
+            swap_authority_pubkey,
             token_program,
             sysvar_instructions,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
         Ok(Self {
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             pair,
             vault_info_base,
             vault_base: InterfaceAccount::try_from(vault_base)?,
             vault_info_quote,
             vault_quote: InterfaceAccount::try_from(vault_quote)?,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
+            swap_authority_pubkey,
             token_program: Interface::try_from(token_program)?,
             sysvar_instructions,
         })
@@ -91,10 +98,10 @@ pub fn swap<'a>(
             return Err(ErrorCode::InvalidTokenMint.into());
         };
 
+    let swap_params = SwapParams { discriminator: 6, amount_in, desired_output: 0 };
+
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.push(6u8); //discriminator
-    data.extend_from_slice(&amount_in.to_le_bytes()); //amount_in
-    data.extend_from_slice(&0u64.to_le_bytes()); //desired ouput token amount
+    data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
         AccountMeta::new(swap_accounts.pair.key(), false),

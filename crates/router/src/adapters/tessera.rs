@@ -2,13 +2,13 @@ use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
-use magnus_shared::pmm_tessera::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::pmm_tessera::{self, ACCOUNTS_LEN, ARGS_LEN, SWAP_SELECTOR};
 
 use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, TESSERA_SWAP_SELECTOR,
+    HopAccounts,
 };
 
 pub struct TesseraProcessor;
@@ -23,14 +23,13 @@ pub struct SwapParams {
 
 pub struct TesseraAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
-    pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
     pub global_state: &'info AccountInfo<'info>,
     pub pool_state: &'info AccountInfo<'info>,
+    pub swap_authority_pubkey: &'info AccountInfo<'info>,
     pub base_vault: &'info AccountInfo<'info>,
     pub quote_vault: &'info AccountInfo<'info>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
     pub base_mint: InterfaceAccount<'info, Mint>,
     pub quote_mint: InterfaceAccount<'info, Mint>,
     pub base_token_program: Interface<'info, TokenInterface>,
@@ -42,13 +41,13 @@ impl<'info> TesseraAccounts<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
         let [
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
             global_state,
             pool_state,
+            swap_authority_pubkey,
             base_vault,
             quote_vault,
+            swap_source_token,
+            swap_destination_token,
             base_mint,
             quote_mint,
             base_token_program,
@@ -58,13 +57,13 @@ impl<'info> TesseraAccounts<'info> {
 
         Ok(Self {
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             global_state,
             pool_state,
+            swap_authority_pubkey,
             base_vault,
             quote_vault,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             base_mint: InterfaceAccount::try_from(base_mint)?,
             quote_mint: InterfaceAccount::try_from(quote_mint)?,
             base_token_program: Interface::try_from(base_token_program)?,
@@ -129,7 +128,7 @@ pub fn swap<'a>(
     };
 
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.extend_from_slice(TESSERA_SWAP_SELECTOR);
+    data.extend_from_slice(SWAP_SELECTOR);
     data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![

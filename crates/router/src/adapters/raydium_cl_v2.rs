@@ -4,7 +4,8 @@ use anchor_spl::{
     token_interface::{Mint, Token2022, TokenAccount},
 };
 use arrayref::array_ref;
-use magnus_shared::amm_raydium_cl_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
+use borsh::{BorshDeserialize, BorshSerialize};
+use magnus_shared::amm_raydium_cl_v2::{self, ACCOUNTS_LEN, ARGS_LEN, SWAPV2_SELECTOR};
 
 use crate::{
     adapters::{
@@ -12,17 +13,24 @@ use crate::{
         raydium_cp::RaydiumSwapProcessor,
     },
     error::ErrorCode,
-    HopAccounts, SWAPV2_SELECTOR, ZERO_ADDRESS,
+    HopAccounts, ZERO_ADDRESS,
 };
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct SwapParams {
+    pub amount_in: u64,
+    pub other_amount_threshold: u64,
+    pub sqrt_price_limit_x64: u128,
+    pub is_base_input: u8,
+}
 
 pub struct RaydiumCLV2Accounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
     pub amm_config_id: &'info AccountInfo<'info>,
     pub pool_id: &'info AccountInfo<'info>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
     pub input_vault: InterfaceAccount<'info, TokenAccount>,
     pub output_vault: InterfaceAccount<'info, TokenAccount>,
     pub observation_id: &'info AccountInfo<'info>,
@@ -42,10 +50,10 @@ impl<'info> RaydiumCLV2Accounts<'info> {
         let [
             dex_program_id,
             swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
             amm_config_id,
             pool_id,
+            swap_source_token,
+            swap_destination_token,
             input_vault,
             output_vault,
             observation_id,
@@ -63,10 +71,10 @@ impl<'info> RaydiumCLV2Accounts<'info> {
         Ok(Self {
             dex_program_id,
             swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             amm_config_id,
             pool_id,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             input_vault: InterfaceAccount::try_from(input_vault)?,
             output_vault: InterfaceAccount::try_from(output_vault)?,
             observation_id,
@@ -108,16 +116,11 @@ pub fn swap<'a>(
     let swap_destination_token = swap_accounts.swap_destination_token.key();
     before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
-    let is_base_input = true;
-    let sqrt_price_limit_x64 = 0u128;
-    let other_amount_threshold = 1u64;
+    let swap_params = SwapParams { amount_in, other_amount_threshold: 1, sqrt_price_limit_x64: 0, is_base_input: true as u8 };
 
     let mut data = Vec::with_capacity(ARGS_LEN);
     data.extend_from_slice(SWAPV2_SELECTOR);
-    data.extend_from_slice(&amount_in.to_le_bytes());
-    data.extend_from_slice(&other_amount_threshold.to_le_bytes());
-    data.extend_from_slice(&sqrt_price_limit_x64.to_le_bytes());
-    data.extend_from_slice(&(is_base_input as u8).to_le_bytes());
+    data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let mut accounts = vec![
         AccountMeta::new(swap_accounts.swap_authority_pubkey.key(), true), // payer
@@ -188,22 +191,17 @@ pub fn swap<'a>(
 
 #[cfg(test)]
 mod tests {
+    use magnus_shared::amm_raydium_cl_v2::SWAP_SELECTOR;
+
     use super::*;
-    use crate::SWAP_SELECTOR;
 
     #[test]
     pub fn test_pack_clmm_instruction() {
-        let amount_in = 100u64;
-        let is_base_input = true;
-        let sqrt_price_limit_x64 = 0u128;
-        let other_amount_threshold = 1u64;
+        let swap_params = SwapParams { amount_in: 100, other_amount_threshold: 1, sqrt_price_limit_x64: 0, is_base_input: true as u8 };
 
         let mut data = Vec::with_capacity(ARGS_LEN);
         data.extend_from_slice(SWAP_SELECTOR);
-        data.extend_from_slice(&amount_in.to_le_bytes());
-        data.extend_from_slice(&other_amount_threshold.to_le_bytes());
-        data.extend_from_slice(&sqrt_price_limit_x64.to_le_bytes());
-        data.extend_from_slice(&(is_base_input as u8).to_le_bytes());
+        data.extend_from_slice(&swap_params.try_to_vec().unwrap());
 
         msg!("data.len: {}", data.len());
         assert!(data.len() == ARGS_LEN);

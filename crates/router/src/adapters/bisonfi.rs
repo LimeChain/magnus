@@ -2,13 +2,13 @@ use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
-use magnus_shared::pmm_bisonfi::{self, ACCOUNTS_LEN, ARGS_LEN};
+use magnus_shared::pmm_bisonfi::{self, ACCOUNTS_LEN, ARGS_LEN, SWAP_SELECTOR};
 
 use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, BISONFI_SWAP_SELECTOR,
+    HopAccounts,
 };
 
 pub struct BisonfiProcessor;
@@ -97,7 +97,7 @@ pub fn swap<'a>(
     let swap_params = SwapParams { amount_in, amount_out_min: 0, b_to_a };
 
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.extend_from_slice(BISONFI_SWAP_SELECTOR);
+    data.extend_from_slice(SWAP_SELECTOR);
     data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
