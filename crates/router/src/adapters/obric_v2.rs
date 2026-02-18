@@ -1,17 +1,25 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::{token::Token, token_interface::TokenAccount};
 use arrayref::array_ref;
-use magnus_shared::pmm_obric_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
+use borsh::{BorshDeserialize, BorshSerialize};
+use magnus_shared::pmm_obric_v2::{self, ACCOUNTS_LEN, ARGS_LEN, SWAP2_SELECTOR};
 
 use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, SWAP2_SELECTOR,
+    HopAccounts,
 };
 
 pub struct ObricV2Processor;
 impl DexProcessor for ObricV2Processor {}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct SwapParams {
+    pub x_to_y: u8,
+    pub amount_in: u64,
+    pub min_amount_out: u64,
+}
 
 pub struct ObricV2Account<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
@@ -106,11 +114,11 @@ pub fn swap<'a>(
             return Err(ErrorCode::InvalidTokenMint.into());
         };
 
+    let swap_params = SwapParams { x_to_y: x_to_y as u8, amount_in, min_amount_out: 1 };
+
     let mut data = Vec::with_capacity(ARGS_LEN);
     data.extend_from_slice(SWAP2_SELECTOR);
-    data.extend_from_slice(&(x_to_y as u8).to_le_bytes());
-    data.extend_from_slice(&amount_in.to_le_bytes());
-    data.extend_from_slice(&1u64.to_le_bytes());
+    data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
         AccountMeta::new(swap_accounts.trading_pair.key(), false),
@@ -168,13 +176,11 @@ mod tests {
 
     #[test]
     pub fn test_pack_swap_instruction() {
-        let amount_in = 100u64;
-        let x_to_y = true;
+        let swap_params = SwapParams { x_to_y: true as u8, amount_in: 100, min_amount_out: 1 };
+
         let mut data = Vec::with_capacity(ARGS_LEN);
         data.extend_from_slice(SWAP2_SELECTOR);
-        data.extend_from_slice(&(x_to_y as u8).to_le_bytes());
-        data.extend_from_slice(&amount_in.to_le_bytes());
-        data.extend_from_slice(&1u64.to_le_bytes());
+        data.extend_from_slice(&swap_params.try_to_vec().unwrap());
 
         msg!("data.len: {}", data.len());
         assert!(data.len() == ARGS_LEN);

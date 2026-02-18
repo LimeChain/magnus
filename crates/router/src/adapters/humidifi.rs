@@ -2,14 +2,27 @@ use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
-use magnus_shared::pmm_humidifi::{self, ACCOUNTS_LEN, ACCOUNTS_LEN_V2V3, ARGS_LEN, ARGS_LEN_V2V3};
+use magnus_shared::pmm_humidifi::{self, ACCOUNTS_LEN, ACCOUNTS_LEN_V2V3, ARGS_LEN, ARGS_LEN_V2V3, SWAPV2_SELECTOR, SWAPV3_SELECTOR, SWAP_SELECTOR};
 
 use super::common::DexProcessor;
 use crate::{
     adapters::common::{before_check, invoke_process},
     error::ErrorCode,
-    HopAccounts, HUMIDIFI_IX_DATA_KEY, HUMIDIFI_SWAPV2_SELECTOR, HUMIDIFI_SWAPV3_SELECTOR, HUMIDIFI_SWAP_SELECTOR,
+    HopAccounts,
 };
+
+const HUMIDIFI_IX_DATA_KEY_SEED: [u8; 32] =
+    [58, 255, 47, 255, 226, 186, 235, 195, 123, 131, 245, 8, 11, 233, 132, 219, 225, 40, 79, 119, 169, 121, 169, 58, 197, 1, 122, 9, 216, 164, 149, 97];
+pub const HUMIDIFI_IX_DATA_KEY: u64 = u64::from_le_bytes([
+    HUMIDIFI_IX_DATA_KEY_SEED[0],
+    HUMIDIFI_IX_DATA_KEY_SEED[1],
+    HUMIDIFI_IX_DATA_KEY_SEED[2],
+    HUMIDIFI_IX_DATA_KEY_SEED[3],
+    HUMIDIFI_IX_DATA_KEY_SEED[4],
+    HUMIDIFI_IX_DATA_KEY_SEED[5],
+    HUMIDIFI_IX_DATA_KEY_SEED[6],
+    HUMIDIFI_IX_DATA_KEY_SEED[7],
+]);
 
 pub struct HumidifiProcessor;
 
@@ -146,7 +159,7 @@ pub fn swap<'a>(
 
     let mut data: Vec<u8> = Vec::with_capacity(ARGS_LEN);
     data.extend_from_slice(&swap_params.try_to_vec()?);
-    data.extend_from_slice(HUMIDIFI_SWAP_SELECTOR);
+    data.extend_from_slice(SWAP_SELECTOR);
     obfuscate_instruction_data(&mut data);
 
     let accounts = vec![
@@ -381,7 +394,7 @@ pub fn swap_v2<'a>(
     proxy_swap: bool,
     owner_seeds: Option<&[&[&[u8]]]>,
 ) -> Result<u64> {
-    swap_v2_v3(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_swap, owner_seeds, HUMIDIFI_SWAPV2_SELECTOR)
+    swap_v2_v3(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_swap, owner_seeds, SWAPV2_SELECTOR)
 }
 
 pub fn swap_v3<'a>(
@@ -393,5 +406,5 @@ pub fn swap_v3<'a>(
     proxy_swap: bool,
     owner_seeds: Option<&[&[&[u8]]]>,
 ) -> Result<u64> {
-    swap_v2_v3(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_swap, owner_seeds, HUMIDIFI_SWAPV3_SELECTOR)
+    swap_v2_v3(remaining_accounts, amount_in, offset, hop_accounts, hop, proxy_swap, owner_seeds, SWAPV3_SELECTOR)
 }

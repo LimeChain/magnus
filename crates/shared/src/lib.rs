@@ -15,6 +15,7 @@ pub mod amm_raydium_cp {
     declare_id!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C");
     pub const ACCOUNTS_LEN: usize = 14;
     pub const ARGS_LEN: usize = 24;
+    pub const CPSWAP_SELECTOR: &[u8; 8] = &[0x8f, 0xbe, 0x5a, 0xda, 0xc4, 0x1e, 0x33, 0xde];
 }
 
 pub mod amm_raydium_cl_v2 {
@@ -23,6 +24,8 @@ pub mod amm_raydium_cl_v2 {
     declare_id!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK");
     pub const ACCOUNTS_LEN: usize = 18;
     pub const ARGS_LEN: usize = 41;
+    pub const SWAP_SELECTOR: &[u8; 8] = &[0xf8, 0xc6, 0x9e, 0x91, 0xe1, 0x75, 0x87, 0xc8];
+    pub const SWAPV2_SELECTOR: &[u8; 8] = &[0x2b, 0x04, 0xed, 0x0b, 0x1a, 0xc9, 0x1e, 0x62];
 }
 
 pub mod pmm_solfi_v2 {
@@ -31,6 +34,7 @@ pub mod pmm_solfi_v2 {
     declare_id!("SV2EYYJyRz2YhfXwXnhNAevDEui5Q6yrfyo13WtupPF");
     pub const ACCOUNTS_LEN: usize = 14;
     pub const ARGS_LEN: usize = 18;
+    pub const SWAP_SELECTOR: &[u8; 1] = &[0x07];
 }
 
 pub mod pmm_obric_v2 {
@@ -39,6 +43,7 @@ pub mod pmm_obric_v2 {
     declare_id!("obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y");
     pub const ACCOUNTS_LEN: usize = 13;
     pub const ARGS_LEN: usize = 25;
+    pub const SWAP2_SELECTOR: &[u8; 8] = &[0x41, 0x4b, 0x3f, 0x4c, 0xeb, 0x5b, 0x5b, 0x88];
 }
 
 pub mod pmm_humidifi {
@@ -50,6 +55,10 @@ pub mod pmm_humidifi {
 
     pub const ACCOUNTS_LEN_V2V3: usize = 16;
     pub const ARGS_LEN_V2V3: usize = 25;
+
+    pub const SWAP_SELECTOR: &[u8; 1] = &[0x04];
+    pub const SWAPV2_SELECTOR: &[u8; 1] = &[0x0f];
+    pub const SWAPV3_SELECTOR: &[u8; 1] = &[0x14];
 }
 
 pub mod pmm_zerofi {
@@ -66,6 +75,7 @@ pub mod pmm_tessera {
     declare_id!("TessVdML9pBGgG9yGks7o4HewRaXVAMuoVj4x83GLQH");
     pub const ACCOUNTS_LEN: usize = 13;
     pub const ARGS_LEN: usize = 18;
+    pub const SWAP_SELECTOR: &[u8; 1] = &[0x10];
 }
 
 pub mod pmm_goonfi {
@@ -74,6 +84,7 @@ pub mod pmm_goonfi {
     declare_id!("goonERTdGsjnkZqWuVjs73BZ3Pb9qoCUdBUL17BnS5j");
     pub const ACCOUNTS_LEN: usize = 11;
     pub const ARGS_LEN: usize = 19;
+    pub const SWAP_SELECTOR: &[u8; 1] = &[0x02];
 }
 
 pub mod pmm_bisonfi {
@@ -82,6 +93,7 @@ pub mod pmm_bisonfi {
     declare_id!("BiSoNHVpsVZW2F7rx2eQ59yQwKxzU5NvBcmKshCSUypi");
     pub const ACCOUNTS_LEN: usize = 10;
     pub const ARGS_LEN: usize = 18;
+    pub const SWAP_SELECTOR: &[u8; 1] = &[0x02];
 }
 
 pub mod spl_token {

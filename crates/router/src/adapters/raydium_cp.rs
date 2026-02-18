@@ -1,16 +1,23 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use arrayref::array_ref;
-use magnus_shared::amm_raydium_cp::{self, ACCOUNTS_LEN, ARGS_LEN};
+use borsh::{BorshDeserialize, BorshSerialize};
+use magnus_shared::amm_raydium_cp::{self, ACCOUNTS_LEN, ARGS_LEN, CPSWAP_SELECTOR};
 
 use crate::{
     adapters::common::{before_check, invoke_process, DexProcessor},
     error::ErrorCode,
-    HopAccounts, CPSWAP_SELECTOR,
+    HopAccounts,
 };
 
 pub struct RaydiumSwapProcessor;
 impl DexProcessor for RaydiumSwapProcessor {}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct SwapParams {
+    pub amount_in: u64,
+    pub minimum_amount_out: u64,
+}
 
 pub struct RaydiumCPAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
@@ -94,11 +101,11 @@ pub fn swap<'a>(
     let swap_destination_token = swap_accounts.swap_destination_token.key();
     before_check(swap_accounts.swap_authority_pubkey, &swap_accounts.swap_source_token, swap_destination_token, hop_accounts, hop, proxy_swap, owner_seeds)?;
 
-    let minimum_amount_out = 0u64;
+    let swap_params = SwapParams { amount_in, minimum_amount_out: 0 };
+
     let mut data = Vec::with_capacity(ARGS_LEN);
     data.extend_from_slice(CPSWAP_SELECTOR);
-    data.extend_from_slice(&amount_in.to_le_bytes());
-    data.extend_from_slice(&minimum_amount_out.to_le_bytes());
+    data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
         AccountMeta::new(swap_accounts.swap_authority_pubkey.key(), true),
@@ -158,13 +165,11 @@ mod tests {
 
     #[test]
     pub fn test_pack_cpmm_instruction() {
-        let amount_in = 100u64;
-        let minimum_amount_out = 0u64;
+        let swap_params = SwapParams { amount_in: 100, minimum_amount_out: 0 };
 
         let mut data = Vec::with_capacity(ARGS_LEN);
         data.extend_from_slice(CPSWAP_SELECTOR);
-        data.extend_from_slice(&amount_in.to_le_bytes());
-        data.extend_from_slice(&minimum_amount_out.to_le_bytes());
+        data.extend_from_slice(&swap_params.try_to_vec().unwrap());
 
         msg!("data.len: {}", data.len());
         assert!(data.len() == ARGS_LEN);

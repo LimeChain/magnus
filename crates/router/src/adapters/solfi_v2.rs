@@ -1,13 +1,21 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
-use magnus_shared::pmm_solfi_v2::{self, ACCOUNTS_LEN, ARGS_LEN};
+use borsh::{BorshDeserialize, BorshSerialize};
+use magnus_shared::pmm_solfi_v2::{self, ACCOUNTS_LEN, ARGS_LEN, SWAP_SELECTOR};
 
 use super::common::DexProcessor;
 use crate::{adapters::common::invoke_process, error::ErrorCode, HopAccounts};
 
 pub struct SolfiProcessor;
 impl DexProcessor for SolfiProcessor {}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct SwapParams {
+    pub amount_in: u64,
+    pub min_amount_out: u64,
+    pub direction: u8,
+}
 
 pub struct SolfiAccountV2<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
@@ -91,11 +99,11 @@ pub fn swap<'a>(
             return Err(ErrorCode::InvalidTokenMint.into());
         };
 
+    let swap_params = SwapParams { amount_in, min_amount_out: 1, direction };
+
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.push(7u8); //discriminator
-    data.extend_from_slice(&amount_in.to_le_bytes()); //amount_in
-    data.extend_from_slice(&1u64.to_le_bytes());
-    data.extend_from_slice(&direction.to_le_bytes()); //swap direction
+    data.extend_from_slice(SWAP_SELECTOR);
+    data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
         AccountMeta::new(swap_accounts.swap_authority_pubkey.key(), true),

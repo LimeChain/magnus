@@ -1,6 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::instruction::Instruction};
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use arrayref::array_ref;
+use borsh::{BorshDeserialize, BorshSerialize};
 use magnus_shared::pmm_zerofi::{self, ACCOUNTS_LEN, ARGS_LEN};
 
 use super::common::DexProcessor;
@@ -12,6 +13,13 @@ use crate::{
 
 pub struct ZeroFiProcessor;
 impl DexProcessor for ZeroFiProcessor {}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct SwapParams {
+    pub discriminator: u8,
+    pub amount_in: u64,
+    pub desired_output: u64,
+}
 
 pub struct ZeroFiAccount<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
@@ -91,10 +99,10 @@ pub fn swap<'a>(
             return Err(ErrorCode::InvalidTokenMint.into());
         };
 
+    let swap_params = SwapParams { discriminator: 6, amount_in, desired_output: 0 };
+
     let mut data = Vec::with_capacity(ARGS_LEN);
-    data.push(6u8); //discriminator
-    data.extend_from_slice(&amount_in.to_le_bytes()); //amount_in
-    data.extend_from_slice(&0u64.to_le_bytes()); //desired ouput token amount
+    data.extend_from_slice(&swap_params.try_to_vec()?);
 
     let accounts = vec![
         AccountMeta::new(swap_accounts.pair.key(), false),
