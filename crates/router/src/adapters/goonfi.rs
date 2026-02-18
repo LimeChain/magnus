@@ -25,17 +25,15 @@ pub struct SwapParams {
 pub struct GoonfiAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority: &'info AccountInfo<'info>,
+    pub market: &'info AccountInfo<'info>,
     pub swap_src_ta: InterfaceAccount<'info, TokenAccount>,
     pub swap_dst_ta: InterfaceAccount<'info, TokenAccount>,
-
-    pub goonfi_param: &'info AccountInfo<'info>,
-
-    pub market: &'info AccountInfo<'info>,
     pub base_vault: &'info AccountInfo<'info>,
     pub quote_vault: &'info AccountInfo<'info>,
     pub blacklist: &'info AccountInfo<'info>,
     pub sysvar_instructions: &'info AccountInfo<'info>,
     pub token_program: Interface<'info, TokenInterface>,
+    pub goonfi_param: &'info AccountInfo<'info>,
 }
 
 impl<'info> GoonfiAccounts<'info> {
@@ -43,29 +41,29 @@ impl<'info> GoonfiAccounts<'info> {
         let [
             dex_program_id,
             swap_authority,
+            market,
             swap_source_account,
             swap_destination_account,
-            goonfi_param,
-            market,
             base_vault,
             quote_vault,
             blacklist,
             sysvar_instructions,
             token_program,
+            goonfi_param,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
 
         Ok(Self {
             dex_program_id,
             swap_authority,
+            market,
             swap_src_ta: InterfaceAccount::try_from(swap_source_account)?,
             swap_dst_ta: InterfaceAccount::try_from(swap_destination_account)?,
-            goonfi_param,
-            market,
             base_vault,
             quote_vault,
             blacklist,
             sysvar_instructions,
             token_program: Interface::try_from(token_program)?,
+            goonfi_param,
         })
     }
 }

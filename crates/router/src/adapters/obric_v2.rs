@@ -23,18 +23,17 @@ pub struct SwapParams {
 
 pub struct ObricV2Account<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
-    pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
     pub trading_pair: &'info AccountInfo<'info>,
     pub second_reference_oracle: &'info AccountInfo<'info>,
     pub third_reference_oracle: &'info AccountInfo<'info>,
     pub reserve_x: InterfaceAccount<'info, TokenAccount>,
     pub reserve_y: InterfaceAccount<'info, TokenAccount>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
     pub reference_oracle: &'info AccountInfo<'info>,
     pub x_price_feed: &'info AccountInfo<'info>,
     pub y_price_feed: &'info AccountInfo<'info>,
+    pub swap_authority_pubkey: &'info AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -42,32 +41,32 @@ impl<'info> ObricV2Account<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
         let [
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
             trading_pair,
             second_reference_oracle,
             third_reference_oracle,
             reserve_x,
             reserve_y,
+            swap_source_token,
+            swap_destination_token,
             reference_oracle,
             x_price_feed,
             y_price_feed,
+            swap_authority_pubkey,
             token_program,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
         Ok(Self {
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             trading_pair,
             second_reference_oracle,
             third_reference_oracle,
             reserve_x: InterfaceAccount::try_from(reserve_x)?,
             reserve_y: InterfaceAccount::try_from(reserve_y)?,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             reference_oracle,
             x_price_feed,
             y_price_feed,
+            swap_authority_pubkey,
             token_program: Program::try_from(token_program)?,
         })
     }

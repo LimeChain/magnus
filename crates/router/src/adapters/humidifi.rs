@@ -57,17 +57,15 @@ pub fn obfuscate_instruction_data(data: &mut [u8]) {
 pub struct HumidifiAccounts<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
-    pub humidifi_param: &'info AccountInfo<'info>,
-
     pub pool: &'info AccountInfo<'info>,
     pub pool_base_token_account: InterfaceAccount<'info, TokenAccount>,
     pub pool_quote_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
     pub clok: &'info AccountInfo<'info>,
     pub token_program: Interface<'info, TokenInterface>,
     pub sysvar_instructions: &'info AccountInfo<'info>,
+    pub humidifi_param: &'info AccountInfo<'info>,
 }
 
 impl<'info> HumidifiAccounts<'info> {
@@ -75,29 +73,29 @@ impl<'info> HumidifiAccounts<'info> {
         let [
             dex_program_id,
             swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
-            humidifi_param,
             pool,
             pool_base_token_account,
             pool_quote_token_account,
+            swap_source_token,
+            swap_destination_token,
             clok,
             token_program,
             sysvar_instructions,
+            humidifi_param,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
 
         Ok(Self {
             dex_program_id,
             swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
-            humidifi_param,
             pool,
             pool_base_token_account: InterfaceAccount::try_from(pool_base_token_account)?,
             pool_quote_token_account: InterfaceAccount::try_from(pool_quote_token_account)?,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             clok,
             token_program: Interface::try_from(token_program)?,
             sysvar_instructions,
+            humidifi_param,
         })
     }
 }
@@ -210,14 +208,11 @@ pub fn swap<'a>(
 pub struct HumidifiAccountsV2<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
     pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
-    pub humidifi_param: &'info AccountInfo<'info>,
-
     pub pool: &'info AccountInfo<'info>,
     pub pool_base_token_account: InterfaceAccount<'info, TokenAccount>,
     pub pool_quote_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
     pub clok: &'info AccountInfo<'info>,
     pub token0_program: Interface<'info, TokenInterface>,
     pub token1_program: Interface<'info, TokenInterface>,
@@ -226,6 +221,7 @@ pub struct HumidifiAccountsV2<'info> {
     pub token1_mint: &'info AccountInfo<'info>,
     pub add1: &'info AccountInfo<'info>,
     pub vote: &'info AccountInfo<'info>,
+    pub humidifi_param: &'info AccountInfo<'info>,
 }
 
 impl<'info> HumidifiAccountsV2<'info> {
@@ -233,12 +229,11 @@ impl<'info> HumidifiAccountsV2<'info> {
         let [
             dex_program_id,
             swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
-            humidifi_param,
             pool,
             pool_base_token_account,
             pool_quote_token_account,
+            swap_source_token,
+            swap_destination_token,
             clok,
             token0_program,
             token1_program,
@@ -247,17 +242,17 @@ impl<'info> HumidifiAccountsV2<'info> {
             token1_mint,
             add1,
             vote,
+            humidifi_param,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN_V2V3] = array_ref![accounts, offset, ACCOUNTS_LEN_V2V3];
 
         Ok(Self {
             dex_program_id,
             swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
-            humidifi_param,
             pool,
             pool_base_token_account: InterfaceAccount::try_from(pool_base_token_account)?,
             pool_quote_token_account: InterfaceAccount::try_from(pool_quote_token_account)?,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             clok,
             token0_program: Interface::try_from(token0_program)?,
             token1_program: Interface::try_from(token1_program)?,
@@ -266,6 +261,7 @@ impl<'info> HumidifiAccountsV2<'info> {
             token1_mint,
             add1,
             vote,
+            humidifi_param,
         })
     }
 }

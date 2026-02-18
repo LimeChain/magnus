@@ -23,15 +23,14 @@ pub struct SwapParams {
 
 pub struct ZeroFiAccount<'info> {
     pub dex_program_id: &'info AccountInfo<'info>,
-    pub swap_authority_pubkey: &'info AccountInfo<'info>,
-    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
-    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
-
     pub pair: &'info AccountInfo<'info>,
     pub vault_info_base: &'info AccountInfo<'info>,
     pub vault_base: InterfaceAccount<'info, TokenAccount>,
     pub vault_info_quote: &'info AccountInfo<'info>,
     pub vault_quote: InterfaceAccount<'info, TokenAccount>,
+    pub swap_source_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_destination_token: InterfaceAccount<'info, TokenAccount>,
+    pub swap_authority_pubkey: &'info AccountInfo<'info>,
     pub token_program: Interface<'info, TokenInterface>,
     pub sysvar_instructions: &'info AccountInfo<'info>,
 }
@@ -40,27 +39,27 @@ impl<'info> ZeroFiAccount<'info> {
     fn parse_accounts(accounts: &'info [AccountInfo<'info>], offset: usize) -> Result<Self> {
         let [
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token,
-            swap_destination_token,
             pair,
             vault_info_base,
             vault_base,
             vault_info_quote,
             vault_quote,
+            swap_source_token,
+            swap_destination_token,
+            swap_authority_pubkey,
             token_program,
             sysvar_instructions,
         ]: &[AccountInfo<'info>; ACCOUNTS_LEN] = array_ref![accounts, offset, ACCOUNTS_LEN];
         Ok(Self {
             dex_program_id,
-            swap_authority_pubkey,
-            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
-            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
             pair,
             vault_info_base,
             vault_base: InterfaceAccount::try_from(vault_base)?,
             vault_info_quote,
             vault_quote: InterfaceAccount::try_from(vault_quote)?,
+            swap_source_token: InterfaceAccount::try_from(swap_source_token)?,
+            swap_destination_token: InterfaceAccount::try_from(swap_destination_token)?,
+            swap_authority_pubkey,
             token_program: Interface::try_from(token_program)?,
             sysvar_instructions,
         })
