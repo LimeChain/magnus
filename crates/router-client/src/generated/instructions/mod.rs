@@ -4,6 +4,10 @@
 //!
 //! <https://github.com/codama-idl/codama>
 
+pub(crate) mod r#route_v2;
 pub(crate) mod r#swap;
+pub(crate) mod r#swap2;
+pub(crate) mod r#swap_route_v2;
+pub(crate) mod r#swap_v3_with_cpi_event;
 
-pub use self::r#swap::*;
+pub use self::{r#route_v2::*, r#swap::*, r#swap2::*, r#swap_route_v2::*, r#swap_v3_with_cpi_event::*};

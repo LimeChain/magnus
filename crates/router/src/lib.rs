@@ -21,4 +21,24 @@ pub mod router {
     pub fn swap<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, data: SwapArgs, order_id: u64) -> Result<()> {
         instructions::swap_handler(ctx, data, order_id)
     }
+
+    // jup
+    pub fn route_v2<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, data: SwapArgs, order_id: u64) -> Result<()> {
+        instructions::swap_handler(ctx, data, order_id)
+    }
+
+    // dflow
+    pub fn swap2<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, data: SwapArgs, order_id: u64) -> Result<()> {
+        instructions::swap_handler(ctx, data, order_id)
+    }
+
+    // titan
+    pub fn swap_route_v2<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, data: SwapArgs, order_id: u64) -> Result<()> {
+        instructions::swap_handler(ctx, data, order_id)
+    }
+
+    // okx
+    pub fn swap_v3_with_cpi_event<'a>(ctx: Context<'_, '_, 'a, 'a, SwapAccounts<'a>>, data: SwapArgs, order_id: u64) -> Result<()> {
+        instructions::swap_handler(ctx, data, order_id)
+    }
 }

@@ -8,11 +8,11 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 use crate::generated::types::SwapArgs;
 
-pub const SWAP_DISCRIMINATOR: [u8; 8] = [248, 198, 158, 145, 225, 117, 135, 200];
+pub const SWAP_V3_WITH_CPI_EVENT_DISCRIMINATOR: [u8; 8] = [184, 104, 79, 156, 107, 182, 120, 138];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct Swap {
+pub struct SwapV3WithCpiEvent {
     pub payer: solana_pubkey::Pubkey,
 
     pub source_token_account: solana_pubkey::Pubkey,
@@ -24,14 +24,18 @@ pub struct Swap {
     pub destination_mint: solana_pubkey::Pubkey,
 }
 
-impl Swap {
-    pub fn instruction(&self, args: SwapInstructionArgs) -> solana_instruction::Instruction {
+impl SwapV3WithCpiEvent {
+    pub fn instruction(&self, args: SwapV3WithCpiEventInstructionArgs) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
 
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
-    pub fn instruction_with_remaining_accounts(&self, args: SwapInstructionArgs, remaining_accounts: &[solana_instruction::AccountMeta]) -> solana_instruction::Instruction {
+    pub fn instruction_with_remaining_accounts(
+        &self,
+        args: SwapV3WithCpiEventInstructionArgs,
+        remaining_accounts: &[solana_instruction::AccountMeta],
+    ) -> solana_instruction::Instruction {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.payer, true));
         accounts.push(solana_instruction::AccountMeta::new(self.source_token_account, false));
@@ -39,7 +43,7 @@ impl Swap {
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.source_mint, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(self.destination_mint, false));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = SwapInstructionData::new().try_to_vec().unwrap();
+        let mut data = SwapV3WithCpiEventInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -49,13 +53,13 @@ impl Swap {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SwapInstructionData {
+pub struct SwapV3WithCpiEventInstructionData {
     discriminator: [u8; 8],
 }
 
-impl SwapInstructionData {
+impl SwapV3WithCpiEventInstructionData {
     pub fn new() -> Self {
-        Self { discriminator: [248, 198, 158, 145, 225, 117, 135, 200] }
+        Self { discriminator: [184, 104, 79, 156, 107, 182, 120, 138] }
     }
 
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
@@ -63,7 +67,7 @@ impl SwapInstructionData {
     }
 }
 
-impl Default for SwapInstructionData {
+impl Default for SwapV3WithCpiEventInstructionData {
     fn default() -> Self {
         Self::new()
     }
@@ -71,18 +75,18 @@ impl Default for SwapInstructionData {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct SwapInstructionArgs {
+pub struct SwapV3WithCpiEventInstructionArgs {
     pub data: SwapArgs,
     pub order_id: u64,
 }
 
-impl SwapInstructionArgs {
+impl SwapV3WithCpiEventInstructionArgs {
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
         borsh::to_vec(self)
     }
 }
 
-/// Instruction builder for `Swap`.
+/// Instruction builder for `SwapV3WithCpiEvent`.
 ///
 /// ### Accounts:
 ///
@@ -92,7 +96,7 @@ impl SwapInstructionArgs {
 ///   3. `[]` source_mint
 ///   4. `[]` destination_mint
 #[derive(Clone, Debug, Default)]
-pub struct SwapBuilder {
+pub struct SwapV3WithCpiEventBuilder {
     payer: Option<solana_pubkey::Pubkey>,
     source_token_account: Option<solana_pubkey::Pubkey>,
     destination_token_account: Option<solana_pubkey::Pubkey>,
@@ -103,7 +107,7 @@ pub struct SwapBuilder {
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl SwapBuilder {
+impl SwapV3WithCpiEventBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -166,21 +170,21 @@ impl SwapBuilder {
 
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = Swap {
+        let accounts = SwapV3WithCpiEvent {
             payer: self.payer.expect("payer is not set"),
             source_token_account: self.source_token_account.expect("source_token_account is not set"),
             destination_token_account: self.destination_token_account.expect("destination_token_account is not set"),
             source_mint: self.source_mint.expect("source_mint is not set"),
             destination_mint: self.destination_mint.expect("destination_mint is not set"),
         };
-        let args = SwapInstructionArgs { data: self.data.clone().expect("data is not set"), order_id: self.order_id.clone().expect("order_id is not set") };
+        let args = SwapV3WithCpiEventInstructionArgs { data: self.data.clone().expect("data is not set"), order_id: self.order_id.clone().expect("order_id is not set") };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
-/// `swap` CPI accounts.
-pub struct SwapCpiAccounts<'a, 'b> {
+/// `swap_v3_with_cpi_event` CPI accounts.
+pub struct SwapV3WithCpiEventCpiAccounts<'a, 'b> {
     pub payer: &'b solana_account_info::AccountInfo<'a>,
 
     pub source_token_account: &'b solana_account_info::AccountInfo<'a>,
@@ -192,8 +196,8 @@ pub struct SwapCpiAccounts<'a, 'b> {
     pub destination_mint: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `swap` CPI instruction.
-pub struct SwapCpi<'a, 'b> {
+/// `swap_v3_with_cpi_event` CPI instruction.
+pub struct SwapV3WithCpiEventCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
 
@@ -207,11 +211,11 @@ pub struct SwapCpi<'a, 'b> {
 
     pub destination_mint: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: SwapInstructionArgs,
+    pub __args: SwapV3WithCpiEventInstructionArgs,
 }
 
-impl<'a, 'b> SwapCpi<'a, 'b> {
-    pub fn new(program: &'b solana_account_info::AccountInfo<'a>, accounts: SwapCpiAccounts<'a, 'b>, args: SwapInstructionArgs) -> Self {
+impl<'a, 'b> SwapV3WithCpiEventCpi<'a, 'b> {
+    pub fn new(program: &'b solana_account_info::AccountInfo<'a>, accounts: SwapV3WithCpiEventCpiAccounts<'a, 'b>, args: SwapV3WithCpiEventInstructionArgs) -> Self {
         Self {
             __program: program,
             payer: accounts.payer,
@@ -255,7 +259,7 @@ impl<'a, 'b> SwapCpi<'a, 'b> {
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_instruction::AccountMeta { pubkey: *remaining_account.0.key, is_signer: remaining_account.1, is_writable: remaining_account.2 })
         });
-        let mut data = SwapInstructionData::new().try_to_vec().unwrap();
+        let mut data = SwapV3WithCpiEventInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -277,7 +281,7 @@ impl<'a, 'b> SwapCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `Swap` via CPI.
+/// Instruction builder for `SwapV3WithCpiEvent` via CPI.
 ///
 /// ### Accounts:
 ///
@@ -287,13 +291,13 @@ impl<'a, 'b> SwapCpi<'a, 'b> {
 ///   3. `[]` source_mint
 ///   4. `[]` destination_mint
 #[derive(Clone, Debug)]
-pub struct SwapCpiBuilder<'a, 'b> {
-    instruction: Box<SwapCpiBuilderInstruction<'a, 'b>>,
+pub struct SwapV3WithCpiEventCpiBuilder<'a, 'b> {
+    instruction: Box<SwapV3WithCpiEventCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> SwapCpiBuilder<'a, 'b> {
+impl<'a, 'b> SwapV3WithCpiEventCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(SwapCpiBuilderInstruction {
+        let instruction = Box::new(SwapV3WithCpiEventCpiBuilderInstruction {
             __program: program,
             payer: None,
             source_token_account: None,
@@ -374,8 +378,11 @@ impl<'a, 'b> SwapCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let args = SwapInstructionArgs { data: self.instruction.data.clone().expect("data is not set"), order_id: self.instruction.order_id.clone().expect("order_id is not set") };
-        let instruction = SwapCpi {
+        let args = SwapV3WithCpiEventInstructionArgs {
+            data: self.instruction.data.clone().expect("data is not set"),
+            order_id: self.instruction.order_id.clone().expect("order_id is not set"),
+        };
+        let instruction = SwapV3WithCpiEventCpi {
             __program: self.instruction.__program,
 
             payer: self.instruction.payer.expect("payer is not set"),
@@ -394,7 +401,7 @@ impl<'a, 'b> SwapCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct SwapCpiBuilderInstruction<'a, 'b> {
+struct SwapV3WithCpiEventCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     payer: Option<&'b solana_account_info::AccountInfo<'a>>,
     source_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,

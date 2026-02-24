@@ -6,6 +6,7 @@
 
 pub(crate) mod r#dex;
 pub(crate) mod r#route;
+pub(crate) mod r#swap_args;
 pub(crate) mod r#swap_event;
 
-pub use self::{r#dex::*, r#route::*, r#swap_event::*};
+pub use self::{r#dex::*, r#route::*, r#swap_args::*, r#swap_event::*};
