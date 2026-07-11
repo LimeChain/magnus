@@ -34,7 +34,8 @@ impl AccountDeserialize for PriceFeed {
         let account: &GenericPriceAccount<32, ()> = load_price_account(data).map_err(|_x| error!(ObricError::PythError))?;
 
         // Use a dummy key since the key field will be removed from the SDK
-        let feed = account.to_price_feed(&PYTH_PROGRAM_ID);
+        let pyth_pubkey = anchor_lang::prelude::Pubkey::new_from_array(PYTH_PROGRAM_ID.to_bytes());
+        let feed = account.to_price_feed(&pyth_pubkey);
         Ok(PriceFeed(feed))
     }
 }
