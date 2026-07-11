@@ -44,8 +44,8 @@ num-derive = "0.4"
 num-traits = "0.2"
 num_cpus = "1.17.0"
 oneshot = "0.1.11"
-pyth-sdk = { git = "https://github.com/lbkolev/pyth-sdk-rs", package = "pyth-sdk" }
-pyth-sdk-solana = { git = "https://github.com/lbkolev/pyth-sdk-rs", package = "pyth-sdk-solana" }
+pyth-sdk = { git = "https://github.com/pyth-network/pyth-sdk-rs", package = "pyth-sdk" }
+pyth-sdk-solana = { git = "https://github.com/pyth-network/pyth-sdk-rs", package = "pyth-sdk-solana" }
 raydium-clmm = { git = "https://github.com/raydium-io/raydium-clmm", package = "raydium-amm-v3", features = ["no-entrypoint", "client"] }
 raydium-cp-swap = { git = "https://github.com/raydium-io/raydium-cp-swap", package = "raydium-cp-swap", features = ["no-entrypoint", "client"] }
 reqwest = { version = "0.12.24" }

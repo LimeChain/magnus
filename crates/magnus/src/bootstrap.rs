@@ -21,20 +21,22 @@ pub fn load(file: &str, client: &RpcClient) -> eyre::Result<Vec<Box<dyn Amm>>> {
     let pmms = if let serde_json::Value::Array(items) = &cfgs {
         items
             .iter()
-            .map(|item| -> Box<dyn Amm> {
-                let dex = Dex::from_str(item.get("dex").and_then(|dex| dex.as_str()).expect("no DEX provided")).map_err(|e| eyre!(e)).expect("");
+            .filter_map(|item| -> Option<Box<dyn Amm>> {
+                let dex_str = item.get("dex").and_then(|dex| dex.as_str()).expect("no DEX provided");
+                let dex = Dex::from_str(dex_str).map_err(|e| eyre!(e)).expect("");
 
-                let init: Box<dyn Amm> = match dex {
+                match dex {
                     Dex::HumidiFi => {
                         let cfg = HumidifiCfg::try_from(item).map_err(|e| eyre!(e)).expect("");
                         let amm = Humidifi::new(cfg, client).expect("unable to initialise humidifi");
 
-                        Box::new(amm)
+                        Some(Box::new(amm) as Box<dyn Amm>)
                     }
-                    _ => panic!("Unsupported DEX: {}", dex),
-                };
-
-                init
+                    _ => {
+                        tracing::info!("Skipping unsupported/non-bootstrapped DEX in bootstrap load: {}", dex);
+                        None
+                    }
+                }
             })
             .collect()
     } else {

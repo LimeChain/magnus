@@ -40,7 +40,7 @@ pub struct HumidifiCfg {
     pub market: Pubkey,
     pub base_ta: Pubkey,
     pub quote_ta: Pubkey,
-    pub reserve_mints: [(Pubkey, u8); 2],
+    pub reserve_mints: [(Pubkey, Option<u8>); 2],
 }
 
 impl TryFrom<&serde_json::Value> for HumidifiCfg {
@@ -58,21 +58,32 @@ impl TryFrom<&serde_json::Value> for HumidifiCfg {
             return Err("reserve_mints must have exactly 2 elements".to_string());
         }
 
-        let mint0 = reserve_mints[0].as_array().ok_or("reserve_mints[0] not a string")?;
-        let (mint0_addr, mint0_dec) = (mint0[0].as_str().ok_or("reserve_mints[0][0] not a string")?, mint0[1].as_u64().ok_or("reserve_mints[0][1] not a u64")?);
+        let parse_mint = |val: &serde_json::Value| -> Result<(Pubkey, Option<u8>), String> {
+            if let Some(arr) = val.as_array() {
+                if arr.len() < 2 {
+                    return Err("reserve_mint array must have at least 2 elements".to_string());
+                }
+                let addr_str = arr[0].as_str().ok_or("reserve_mint address not a string")?;
+                let addr = Pubkey::from_str(addr_str).map_err(|e| e.to_string())?;
+                let dec = arr[1].as_u64().ok_or("reserve_mint decimals not a u64")? as u8;
+                Ok((addr, Some(dec)))
+            } else if let Some(addr_str) = val.as_str() {
+                let addr = Pubkey::from_str(addr_str).map_err(|e| e.to_string())?;
+                Ok((addr, None))
+            } else {
+                Err("reserve_mint must be an array [address, decimals] or a string address".to_string())
+            }
+        };
 
-        let mint1 = reserve_mints[1].as_array().ok_or("reserve_mints[1] not a string")?;
-        let (mint1_addr, mint1_dec) = (mint1[0].as_str().ok_or("reserve_mints[1][0] not a string")?, mint1[1].as_u64().ok_or("reserve_mints[1][1] not a u64")?);
+        let mint0 = parse_mint(&reserve_mints[0])?;
+        let mint1 = parse_mint(&reserve_mints[1])?;
 
         Ok(HumidifiCfg {
             pubkey: Pubkey::from_str(pubkey).map_err(|e| e.to_string())?,
             market: Pubkey::from_str(market).map_err(|e| e.to_string())?,
             base_ta: Pubkey::from_str(base_ta).map_err(|e| e.to_string())?,
             quote_ta: Pubkey::from_str(quote_ta).map_err(|e| e.to_string())?,
-            reserve_mints: [
-                (Pubkey::from_str(mint0_addr).map_err(|e| e.to_string())?, mint0_dec as u8),
-                (Pubkey::from_str(mint1_addr).map_err(|e| e.to_string())?, mint1_dec as u8),
-            ],
+            reserve_mints: [mint0, mint1],
         })
     }
 }
@@ -81,14 +92,29 @@ impl Adapter for Humidifi {}
 
 impl Humidifi {
     pub fn new(cfg: HumidifiCfg, client: &RpcClient) -> eyre::Result<Humidifi> {
-        let mut chroot = Chroot::new(cfg.reserve_mints);
+        use solana_sdk::program_pack::Pack;
+
+        let mut reserve_mints_with_decimals = [(Pubkey::default(), 0u8); 2];
+        for (i, &(mint, opt_dec)) in cfg.reserve_mints.iter().enumerate() {
+            let dec = match opt_dec {
+                Some(d) => d,
+                None => {
+                    let account = client.get_account(&mint)?;
+                    let mint_state = spl_token::state::Mint::unpack(&account.data)?;
+                    mint_state.decimals
+                }
+            };
+            reserve_mints_with_decimals[i] = (mint, dec);
+        }
+
+        let mut chroot = Chroot::new(reserve_mints_with_decimals);
         chroot.load_program(ROUTER_ID, "./cfg/programs/magnus-router.so")?;
         chroot.load_program(Pubkey::from_str_const(&pmm_humidifi::id().to_string()), "./cfg/programs/humidifi.so")?;
 
         let accs = client.get_multiple_accounts(&[cfg.market, cfg.base_ta, cfg.quote_ta])?;
         chroot.load_accounts(vec![(cfg.market, accs[0].clone().unwrap()), (cfg.base_ta, accs[1].clone().unwrap()), (cfg.quote_ta, accs[2].clone().unwrap())])?;
 
-        cfg.reserve_mints.iter().try_for_each(|(mint_addr, _)| -> eyre::Result<()> {
+        reserve_mints_with_decimals.iter().try_for_each(|(mint_addr, _)| -> eyre::Result<()> {
             let ata = Chroot::mk_ata(mint_addr, &chroot.wallet_pubkey(), 0);
             let addr = chroot.wallet_ata(mint_addr);
             chroot.load_accounts(vec![(addr, ata)])
@@ -250,8 +276,8 @@ mod tests {
 
         assert_eq!(cfg.pubkey, Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap());
         assert_eq!(cfg.market, Pubkey::from_str("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap());
-        assert_eq!(cfg.reserve_mints[0].1, 6);
-        assert_eq!(cfg.reserve_mints[1].1, 9);
+        assert_eq!(cfg.reserve_mints[0].1, Some(6));
+        assert_eq!(cfg.reserve_mints[1].1, Some(9));
     }
 
     #[test]
